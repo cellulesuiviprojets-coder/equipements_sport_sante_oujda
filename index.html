@@ -1,0 +1,1585 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Établissements publics sportifs et sanitaires — Districts d'Oujda</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#1c2430;--line:#dfe4ea;--muted:#6b7686;--accent:#0a5c4a;--bg:#f4f6f8;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+#map{position:fixed;inset:0;z-index:1}
+/* Top bar shared by district tabs AND nature tabs — same design/placement */
+.topbar{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1000;
+ display:flex;gap:10px;flex-wrap:nowrap;justify-content:center;max-width:calc(100vw - 320px);
+ overflow-x:auto;padding:2px}
+.topbar.hidden{display:none}
+#naturebar{flex-wrap:wrap;overflow-x:visible;max-width:calc(100vw - 380px);row-gap:8px}
+#naturebar .tab{padding:7px 13px;font-size:12.5px}
+.tab{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fff;border:1px solid var(--line);
+ border-radius:12px;box-shadow:0 6px 20px rgba(20,30,45,.12);cursor:pointer;font-weight:650;font-size:13.5px;
+ transition:transform .12s,box-shadow .12s,opacity .12s;user-select:none;white-space:nowrap;flex:0 0 auto}
+.tab:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(20,30,45,.18)}
+.tab .dot{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.15);flex:0 0 auto}
+.tab .cnt{font-size:11px;color:var(--muted);font-weight:600;background:var(--bg);padding:1px 7px;border-radius:8px}
+.tab.off{opacity:.42}
+.back{position:absolute;top:14px;left:14px;z-index:1001;display:none;align-items:center;gap:7px;
+ padding:9px 15px;background:#fff;border:1px solid var(--line);border-radius:12px;
+ box-shadow:0 6px 20px rgba(20,30,45,.14);cursor:pointer;font-weight:650;font-size:13px}
+.back.show{display:flex}
+#home{left:14px}
+#back{left:70px}
+#tabhost{display:contents}
+#burger,#drawerbg{display:none}
+.sheetgrab{display:none}
+.stats{position:absolute;top:14px;right:14px;bottom:14px;z-index:1000;width:316px;max-width:calc(100vw - 28px);
+ background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px rgba(20,30,45,.16);
+ overflow:hidden;display:none;flex-direction:column}
+.stats.show{display:flex}
+.stats header{padding:16px 18px 12px;background:linear-gradient(135deg,var(--accent),#0d7a61)}
+.stats header h2{margin:0;font-size:15px;color:#fff;font-weight:700}
+.stats header .sub{margin:3px 0 0;font-size:12px;color:rgba(255,255,255,.85)}
+.stats .total{padding:11px 18px;display:flex;gap:24px;border-bottom:1px solid var(--line)}
+.statnat{display:none;padding:12px 18px 2px}
+.statnat.show{display:block}
+.statnat .nb{display:inline-flex;align-items:center;gap:8px;padding:5px 13px;border-radius:20px;color:#fff;font-weight:700;font-size:12.5px}
+.statnat .nb .d{width:9px;height:9px;border-radius:50%;background:#fff;display:inline-block}
+.stats .total .metric{display:flex;flex-direction:column;gap:2px}
+.stats .total .n{font-size:30px;font-weight:800;color:var(--accent);line-height:1}
+.stats .total .l{font-size:11.5px;color:var(--muted);font-weight:600}
+.chartwrap{padding:14px 16px 6px;border-bottom:1px solid var(--line)}
+.chartwrap canvas{max-height:172px}
+.stats .body{padding:8px 12px 14px;flex:1;overflow:hidden}
+.srow{display:flex;align-items:center;gap:10px;padding:5px 6px}
+.bcount{padding:12px 18px 4px;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line)}
+.bcount b{color:var(--accent);font-size:15px}
+.blrow{display:flex;align-items:center;gap:8px;padding:4px 6px;font-size:12px;font-weight:600;border-bottom:1px solid #f0f2f5;cursor:pointer;border-radius:8px}
+.blrow:hover{background:var(--bg)}
+.blrow.sel{background:var(--bg)}
+.blrow .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.blrow .bnm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blrow.sel .bnm{color:var(--accent);font-weight:700}
+.srow .dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto}
+.srow .nm{flex:1;font-size:12.5px;font-weight:600}
+.srow .bar{height:8px;border-radius:5px;min-width:4px;transition:width .4s}
+.srow .v{font-size:12.5px;font-weight:700;width:22px;text-align:right}
+.barwrap{flex:1;background:var(--bg);border-radius:5px;overflow:hidden}
+.leaflet-tooltip.lbl{background:rgba(255,255,255,.82);border:none;box-shadow:none;font-weight:700;
+ font-size:12px;color:#1c2430;padding:2px 6px}
+.leaflet-tooltip.alabel{background:rgba(255,255,255,.88);border:1px solid rgba(0,0,0,.12);box-shadow:0 1px 4px rgba(0,0,0,.1);
+ font-weight:700;font-size:11px;color:#1c2430;padding:2px 6px;border-radius:5px}
+.pn-pop b{font-size:13px}.pn-pop{font-size:12px;line-height:1.5}
+.dbody{padding:16px 18px;overflow:auto;flex:1}
+.dbody .field{margin-bottom:14px}
+.dbody .flabel{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.dbody .fval{font-size:14px;font-weight:600}
+.dbody .natbadge{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:20px;color:#fff;font-weight:700;font-size:13px}
+.dbody img{width:100%;height:190px;object-fit:cover;border-radius:12px;border:1px solid var(--line);margin-top:2px;background:var(--bg);cursor:zoom-in;display:block}
+.slider{position:relative;margin-top:2px;height:190px}
+.slider .sstage,.slider .sstage img{height:190px}
+.slider .sstage img{width:100%;object-fit:cover;margin-top:0}
+#lightbox{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;background:rgba(10,15,22,.86)}
+#lightbox.show{display:flex}
+#lightbox img{max-width:90vw;max-height:80vh;width:auto;height:auto;border-radius:10px;box-shadow:0 12px 46px rgba(0,0,0,.6);background:#0a0f16}
+#lbclose{position:absolute;top:16px;right:18px;width:46px;height:46px;border:none;border-radius:50%;background:rgba(255,255,255,.92);color:#111;font-size:22px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#lbclose:hover{background:#fff}
+#baseswitch{position:fixed;left:14px;bottom:16px;z-index:2200;display:flex;background:rgba(255,255,255,.94);border-radius:22px;box-shadow:0 4px 16px rgba(20,30,45,.28);overflow:hidden;font-family:inherit}
+#baseswitch .bs{border:none;background:transparent;padding:9px 16px;font-size:13px;font-weight:700;color:#48566a;cursor:pointer}
+#baseswitch .bs.on{background:var(--accent,#0a5c4a);color:#fff}
+#locbtn{position:fixed;left:14px;bottom:64px;z-index:2200;width:44px;height:44px;
+ border:none;border-radius:50%;background:#fff;box-shadow:0 4px 16px rgba(20,30,45,.28);
+ font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#locbtn.on{background:var(--accent);color:#fff}
+#locbtn.on.paused{background:#fff;color:var(--accent);border:2px solid var(--accent)}
+#locbtn.err{animation:locshake .4s}
+@keyframes locshake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#coordbox{position:fixed;left:64px;bottom:64px;z-index:2200;display:none;
+ background:rgba(28,36,48,.88);color:#fff;padding:8px 30px 8px 12px;border-radius:12px;
+ font-size:11.5px;font-weight:600;line-height:1.5;box-shadow:0 4px 16px rgba(20,30,45,.28);
+ white-space:nowrap;font-variant-numeric:tabular-nums}
+#coordbox.show{display:block}
+#coordbox-close{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;
+ border:2px solid #fff;background:#4b5563;color:#fff;font-size:10px;font-weight:800;cursor:pointer;
+ display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+ touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#coordbox .lbl{color:#9aa6b5;font-weight:600;margin-right:4px}
+@media (max-width:680px){
+ #coordbox{left:auto;right:8px;bottom:auto;top:100px}
+ #coordbox-close{top:-6px;right:-2px;width:26px;height:26px;font-size:11px}
+}
+#geotoast{position:fixed;top:10px;left:50%;transform:translate(-50%,-140%);z-index:2900;
+ background:#1c2430;color:#fff;padding:10px 18px;border-radius:20px;font-size:12.5px;font-weight:700;
+ box-shadow:0 8px 24px rgba(20,30,45,.35);transition:transform .3s ease;white-space:nowrap;
+ max-width:calc(100vw - 24px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#geotoast.show{transform:translate(-50%,0)}
+#distalert{position:fixed;left:50%;bottom:-200px;transform:translateX(-50%);z-index:1500;
+ display:flex;align-items:center;gap:12px;background:var(--distcol,#1c2430);color:#fff;
+ padding:10px 12px 10px 16px;border-radius:24px;box-shadow:0 8px 24px rgba(20,30,45,.3);
+ max-width:calc(100vw - 28px);transition:bottom .3s ease}
+#distalert.show{bottom:16px}
+#distalert-txt{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#distalert-nav{flex:0 0 auto;background:#fff;color:var(--distcol,#1c2430);border-radius:16px;padding:7px 13px;
+ font-size:12.5px;font-weight:800;text-decoration:none;white-space:nowrap}
+#distalert-close{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;
+ border:2px solid #fff;background:#4b5563;color:#fff;font-size:11px;font-weight:800;cursor:pointer;
+ display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+ touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.axistoggle{display:flex;gap:0;margin:11px 16px 2px;background:var(--bg);border-radius:20px;padding:3px}
+.axistoggle button{flex:1;border:none;background:transparent;padding:7px 4px;font-size:11.5px;font-weight:700;color:#5b6b7b;cursor:pointer;border-radius:16px;white-space:nowrap}
+.axistoggle button.on{background:#fff;color:var(--accent);box-shadow:0 1px 4px rgba(20,30,45,.14)}
+.lbnav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border:none;border-radius:50%;background:rgba(255,255,255,.9);color:#111;font-size:26px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.lbnav:hover{background:#fff}
+#lbprev{left:18px}#lbnext{right:18px}
+#lbcount{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(10,15,22,.7);color:#fff;font-size:13px;font-weight:700;padding:4px 12px;border-radius:12px}
+.snav{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;border-radius:50%;
+ background:rgba(28,36,48,.55);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.snav:hover{background:rgba(28,36,48,.85)}
+.sprev{left:8px}.snext{right:8px}
+.scount{position:absolute;bottom:8px;right:8px;background:rgba(28,36,48,.72);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px}
+.dbody .maps{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:6px;padding:11px;
+ background:var(--accent);color:#fff;border-radius:12px;font-weight:700;font-size:13.5px;text-decoration:none}
+.dbody .maps:hover{background:#0d7a61}
+.hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:1000;
+ background:rgba(28,36,48,.85);color:#fff;padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:500}
+#tload{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:1200;display:none;
+ align-items:center;gap:9px;background:rgba(28,36,48,.92);color:#fff;padding:9px 16px;border-radius:20px;
+ font-size:12.5px;font-weight:600;box-shadow:0 6px 20px rgba(20,30,45,.25)}
+#tload.show{display:flex}
+#tload .sp{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:680px){
+  /* Panneaux (stats + fiche) en feuille du bas glissable */
+  .stats{top:auto;left:6px;right:6px;bottom:6px;width:auto;max-width:none;max-height:40vh;border-radius:18px 18px 16px 16px}
+  .stats .body{overflow:auto}
+  .stats header{padding:6px 16px 9px}
+  .dbody{padding:12px 16px 16px}
+  .chartwrap{display:none}
+  .stats .total{padding:9px 18px}
+  .stats .total .n{font-size:24px}
+  .statnat{padding:8px 18px 0}
+  .sheetgrab{display:block;padding:8px 0 2px;cursor:grab;touch-action:none}
+  .sheetgrab span{display:block;width:44px;height:5px;border-radius:3px;background:#c7ced6;margin:0 auto}
+  /* Fond de carte : haut droite, toujours visible */
+  #baseswitch{top:10px;right:8px;left:auto;bottom:auto;z-index:2300}
+  #baseswitch .bs{padding:8px 13px;font-size:12px}
+  /* Boutons accueil / retour (flottants, compacts) */
+  .back{top:10px;padding:8px 11px;font-size:13px}
+  #home{left:58px}
+  #back{left:116px}
+  .bk-tx{display:none}      /* retour = flèche seule */
+  /* Burger + tiroir contenant districts/natures */
+  #burger{display:flex;position:fixed;top:10px;left:8px;z-index:2400;width:42px;height:42px;
+    align-items:center;justify-content:center;border:none;border-radius:12px;background:#fff;
+    box-shadow:0 6px 20px rgba(20,30,45,.16);font-size:20px;cursor:pointer;color:#1c2430}
+  #burger .bico{font-size:20px;line-height:1}
+  #burger .blabel{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 3px;
+    border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+  #drawerbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2550}
+  #drawerbg.open{display:block}
+  #tabhost{display:block;position:fixed;top:0;left:0;bottom:0;width:82%;max-width:300px;background:#fff;
+    z-index:2600;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;
+    padding:58px 12px 20px;box-shadow:2px 0 22px rgba(0,0,0,.28)}
+  #tabhost.open{transform:none}
+  #tabhost .topbar{position:static;left:auto;right:auto;top:auto;transform:none;max-width:none;width:100%;
+    display:flex;flex-direction:column;gap:8px;overflow:visible;flex-wrap:nowrap;margin:0;padding:0}
+  #tabhost .topbar.hidden{display:none}
+  #tabhost .tab{width:100%;justify-content:flex-start;font-size:14px;padding:11px 14px}
+  /* Photos plus compactes */
+  .dbody img,.slider,.slider .sstage,.slider .sstage img{height:150px}
+  /* Message d'aide */
+  .hint{font-size:12px;max-width:calc(100vw - 24px);text-align:center;left:50%;transform:translateX(-50%)}
+  /* Lightbox */
+  .lbnav{width:40px;height:40px;font-size:22px}
+  #lbprev{left:8px}#lbnext{right:8px}
+  #lbclose{top:10px;right:10px;width:40px;height:40px}
+  /* Géolocalisation */
+  #locbtn{top:54px;right:8px;left:auto;bottom:auto;width:42px;height:42px}
+  #geotoast{top:8px;font-size:12px;padding:9px 14px;max-width:calc(100vw - 130px)}
+  /* Positionné juste sous la pile #baseswitch + #locbtn (10px + ~30px + 42px + marges).
+     Le masquage utilise `top` (pas un pourcentage de transform) : c'est le seul moyen fiable
+     de garantir que le bandeau est bien hors écran quel que soit sa hauteur réelle (variable
+     selon la longueur du nom de district) — un transform en % de la hauteur pouvait laisser
+     le bandeau visible et superposé à #baseswitch/#locbtn même sans la classe .show. */
+  #distalert{left:10px;right:10px;bottom:auto;top:-220px;transform:none;
+   max-width:none;flex-direction:column;align-items:stretch;text-align:center;border-radius:16px;
+   z-index:2350;transition:top .3s ease}
+  #distalert.show{top:104px;bottom:auto}
+  #distalert-nav{align-self:center}
+  /* Bouton fermer : cible tactile agrandie et RAMENÉE à l'intérieur du cadre (plus de débord
+     hors écran) — collé au bord de l'écran, le débord négatif d'origine tombait dans la zone
+     de geste système (retour/notifications) et volait le tap avant qu'il n'atteigne le bouton. */
+  #distalert-close{top:-10px;right:-2px;width:30px;height:30px;font-size:13px}
+}
+
+/* ---- Sélecteur de secteur : sportifs / sanitaires ---- */
+#sectorbar{position:fixed;left:180px;bottom:16px;z-index:2200;display:flex;gap:4px;padding:4px;
+ background:rgba(255,255,255,.96);border-radius:24px;box-shadow:0 4px 16px rgba(20,30,45,.28);font-family:inherit}
+#sectorbar button{border:none;background:transparent;padding:8px 15px;font:inherit;font-size:13px;font-weight:700;
+ color:#48566a;cursor:pointer;border-radius:20px;white-space:nowrap;display:flex;align-items:center;gap:7px}
+#sectorbar button .n{font-size:11px;font-weight:700;background:var(--bg);color:var(--muted);padding:1px 7px;border-radius:8px}
+#sectorbar button.on[data-s="Sport"]{background:#0a5c4a;color:#fff}
+#sectorbar button.on[data-s="Santé"]{background:#c62839;color:#fff}
+#sectorbar button.on .n{background:rgba(255,255,255,.25);color:#fff}
+#sectorbar .sh{display:none}
+@media (max-width:680px){.hint,#tload{bottom:70px}
+@media (max-width:680px){
+  #sectorbar{left:8px;top:60px;bottom:auto;padding:3px;z-index:2250}
+  #sectorbar button{padding:7px 11px;font-size:12px}
+  #sectorbar .lg{display:none}
+  #sectorbar .sh{display:inline}
+  .hint,#tload{bottom:16px}
+}
+</style></head><body>
+<div id="map"></div>
+<button id="burger" type="button" aria-label="Menu"><span class="bico">☰</span><span class="blabel" id="blabel">D</span></button>
+<div id="drawerbg"></div>
+<div class="back" id="home" style="padding:9px 12px;font-size:16px">🏠</div>
+<div class="back" id="back"><span class="bk-ic">←</span><span class="bk-tx"> Retour</span></div>
+<div id="tabhost">
+  <div class="topbar" id="topbar"></div>
+  <div class="topbar hidden" id="naturebar"></div>
+</div>
+<div class="stats" id="stats">
+ <div class="sheetgrab"><span></span></div>
+ <header><h2 id="stitle">District</h2><p class="sub">Établissements par type</p></header>
+ <div class="statnat" id="statnat"></div>
+ <div class="axistoggle" id="axistoggle" style="display:none">
+   <button type="button" data-a="all" class="on">Tous</button>
+   <button type="button" data-a="grand">Grands axes</button>
+   <button type="button" data-a="sec">Axes secondaires</button>
+ </div>
+ <div class="total">
+   <div class="metric"><span class="n" id="stotal">0</span><span class="l">établissements</span></div>
+   <div class="metric" style="display:none"><span class="n" id="sboul">0</span><span class="l"></span></div>
+ </div>
+ <div class="chartwrap"><canvas id="chart"></canvas></div>
+ <div class="body" id="sbody"></div>
+</div>
+<div class="stats" id="detail">
+ <div class="sheetgrab"><span></span></div>
+ <header><h2 id="dtitle">Établissement</h2><p class="sub" id="dsub">Détail</p></header>
+ <div class="dbody" id="dbody"></div>
+</div>
+<div class="hint" id="hint">Clique sur une étiquette de district pour voir ses établissements</div>
+<div id="tload"><span class="sp"></span><span id="tloadtxt">Tracé des boulevards…</span></div>
+<div id="sectorbar"><button type="button" data-s="Sport" class="on">🏟️ <span class="lg">Établissements publics sportifs</span><span class="sh">Sportifs</span><span class="n" id="nsport">…</span></button><button type="button" data-s="Santé">🏥 <span class="lg">Établissements publics sanitaires</span><span class="sh">Sanitaires</span><span class="n" id="nsante">…</span></button></div>
+<div id="baseswitch"><button type="button" class="bs on" data-l="osm">Plan</button><button type="button" class="bs" data-l="sat">Satellite</button></div>
+<button id="locbtn" type="button" title="Ma position">📍</button>
+<div id="coordbox"><button type="button" id="coordbox-close" aria-label="Fermer">✕</button><div><span class="lbl">Vous :</span><span id="coordme">—</span></div><div id="coorddest" style="display:none"><span class="lbl">Cible :</span><span id="coorddestval">—</span></div></div>
+<div id="geotoast"></div>
+<div id="distalert"><span id="distalert-txt"></span><a id="distalert-nav" href="#" target="_blank">🧭 Naviguer</a><button type="button" id="distalert-close" aria-label="Fermer">✕</button></div>
+<div id="lightbox"><button id="lbclose" type="button" title="Fermer">✕</button><button id="lbprev" class="lbnav" type="button">‹</button><img id="lbimg" alt="photo"><button id="lbnext" class="lbnav" type="button">›</button><div id="lbcount"></div></div>
+<!-- traces.js intégré : tracés persistants des boulevards (rempli par telecharger_traces.py) -->
+<script id="tracesjs">window.WAYS=[];</script>
+<script>
+const GEO={"districts":[{"name":"SIDI YAHYA","members":[18,13,14,15,11],"parts":[[[[-1.877876,34.64752],[-1.878348,34.647092],[-1.881921,34.64682],[-1.882982,34.646061],[-1.88304,34.645849],[-1.882679,34.64565],[-1.882447,34.64564],[-1.88243,34.645495],[-1.882603,34.645385],[-1.883055,34.645478],[-1.883211,34.645586],[-1.883617,34.645566],[-1.883704,34.645642],[-1.884625,34.645579],[-1.884972,34.645688],[-1.885106,34.645635],[-1.88512,34.645463],[-1.885314,34.645342],[-1.885573,34.645543],[-1.886825,34.64495],[-1.887956,34.644248],[-1.887671,34.64391],[-1.88759,34.643624],[-1.888043,34.643438],[-1.888211,34.643527],[-1.888524,34.643562],[-1.888492,34.643739],[-1.88877,34.643663],[-1.888867,34.643443],[-1.88914,34.643423],[-1.889951,34.643591],[-1.890519,34.643426],[-1.890385,34.643201],[-1.890464,34.642951],[-1.890728,34.643064],[-1.890934,34.643011],[-1.89101,34.642821],[-1.891058,34.642772],[-1.891133,34.642803],[-1.891154,34.64302],[-1.892225,34.644367],[-1.892513,34.646368],[-1.903952,34.646744],[-1.904405,34.645356],[-1.90579,34.645394],[-1.909874,34.646903],[-1.914233,34.647024],[-1.914156,34.647761],[-1.913758,34.64859],[-1.913668,34.648943],[-1.913488,34.652812],[-1.91339,34.653655],[-1.91176,34.661628],[-1.910761,34.664923],[-1.90366,34.663548],[-1.897706,34.663906],[-1.893426,34.664902],[-1.895744,34.664363],[-1.895859,34.66485],[-1.89664,34.666069],[-1.897926,34.66785],[-1.898341,34.668042],[-1.899933,34.668109],[-1.89991,34.671947],[-1.902648,34.67479],[-1.903811,34.675729],[-1.903419,34.676636],[-1.902191,34.678293],[-1.901932,34.679478],[-1.899785,34.679062],[-1.894049,34.679119],[-1.889706,34.680577],[-1.891617,34.689827],[-1.889694,34.690562],[-1.887226,34.692224],[-1.886583,34.692533],[-1.885265,34.692892],[-1.88192,34.694135],[-1.881336,34.694636],[-1.878859,34.697292],[-1.876684,34.699442],[-1.875257,34.70076],[-1.8676,34.705696],[-1.863059,34.709238],[-1.861068,34.710396],[-1.856926,34.703789],[-1.856449,34.700064],[-1.857383,34.687558],[-1.859514,34.678019],[-1.853545,34.679137],[-1.853517,34.671185],[-1.854941,34.660978],[-1.858939,34.658519],[-1.862285,34.654941],[-1.865621,34.65158],[-1.870026,34.649917],[-1.869484,34.649122],[-1.870297,34.647837],[-1.871365,34.647175],[-1.873157,34.646325],[-1.87392,34.64733],[-1.874728,34.647836],[-1.875358,34.648141],[-1.876104,34.648163],[-1.876703,34.648067],[-1.877876,34.64752]]]],"c":[-1.879318,34.671465]},{"name":"SIDI DRISS EL QADI","members":[5,6,7,8],"parts":[[[[-1.929252,34.737463],[-1.928144,34.737613],[-1.900683,34.736702],[-1.899232,34.73633],[-1.899027,34.7362],[-1.898457,34.736077],[-1.898076,34.736073],[-1.896209,34.735495],[-1.896149,34.735415],[-1.893857,34.734174],[-1.893113,34.735133],[-1.892202,34.734757],[-1.88958,34.734045],[-1.889408,34.734965],[-1.88722,34.734242],[-1.886914,34.734279],[-1.886019,34.733926],[-1.885788,34.734347],[-1.885354,34.734884],[-1.884268,34.73598],[-1.882984,34.735139],[-1.882251,34.734195],[-1.882116,34.733907],[-1.881512,34.733207],[-1.881434,34.733031],[-1.880968,34.732688],[-1.880767,34.732702],[-1.880408,34.732863],[-1.879621,34.732761],[-1.879328,34.732641],[-1.879143,34.732464],[-1.878513,34.732278],[-1.877824,34.731977],[-1.876996,34.733343],[-1.876514,34.733915],[-1.875401,34.736426],[-1.874804,34.736932],[-1.873677,34.739811],[-1.871325,34.739104],[-1.868974,34.738515],[-1.873189,34.731994],[-1.87225,34.731197],[-1.869749,34.728704],[-1.868387,34.725627],[-1.865355,34.720147],[-1.864657,34.718384],[-1.863087,34.713997],[-1.861073,34.710393],[-1.863059,34.709238],[-1.8676,34.705696],[-1.875257,34.70076],[-1.876684,34.699442],[-1.878859,34.697292],[-1.881336,34.694636],[-1.88192,34.694135],[-1.885265,34.692892],[-1.886583,34.692533],[-1.887226,34.692224],[-1.889694,34.690562],[-1.891351,34.689928],[-1.891623,34.689856],[-1.891645,34.689961],[-1.89262,34.688953],[-1.893667,34.688492],[-1.894666,34.687942],[-1.895872,34.687773],[-1.898226,34.690243],[-1.8988,34.689846],[-1.899375,34.690149],[-1.90181,34.690146],[-1.902144,34.690445],[-1.903116,34.690801],[-1.903167,34.690667],[-1.904839,34.69132],[-1.904748,34.691475],[-1.906683,34.692603],[-1.907234,34.692047],[-1.911356,34.691363],[-1.921191,34.689417],[-1.923983,34.689388],[-1.924417,34.690368],[-1.92493,34.690855],[-1.925731,34.691375],[-1.928469,34.692233],[-1.934724,34.694001],[-1.935853,34.694135],[-1.94214,34.693981],[-1.941531,34.696988],[-1.940668,34.698687],[-1.93961,34.700364],[-1.938752,34.701096],[-1.937549,34.701758],[-1.931964,34.703631],[-1.930753,34.704188],[-1.929569,34.705322],[-1.929044,34.706464],[-1.928994,34.71093],[-1.929124,34.712055],[-1.930932,34.719869],[-1.932422,34.723951],[-1.932793,34.725874],[-1.932947,34.727405],[-1.932736,34.729522],[-1.932038,34.731311],[-1.931704,34.731997],[-1.931633,34.732809],[-1.931528,34.733218],[-1.931446,34.734424],[-1.931222,34.735457],[-1.930745,34.736281],[-1.930111,34.736866],[-1.929252,34.737463]]]],"c":[-1.896141,34.71348]},{"name":"OUED NACHEF SIDI MAAFA","members":[9,10,12,16,17],"parts":[[[[-1.917396,34.673666],[-1.917235,34.671761],[-1.91759,34.668099],[-1.914967,34.666295],[-1.91348,34.665457],[-1.90366,34.663548],[-1.910761,34.664923],[-1.91176,34.661628],[-1.91339,34.653655],[-1.913488,34.652812],[-1.913668,34.648943],[-1.913758,34.64859],[-1.914156,34.647761],[-1.914233,34.647024],[-1.909874,34.646903],[-1.94356,34.64783],[-1.949218,34.641958],[-1.951896,34.642917],[-1.951121,34.648037],[-1.953158,34.64984],[-1.954418,34.650713],[-1.955804,34.652868],[-1.956192,34.653969],[-1.956929,34.655569],[-1.957018,34.656595],[-1.956851,34.65724],[-1.956573,34.657633],[-1.956175,34.657954],[-1.95555,34.658734],[-1.953987,34.662223],[-1.951469,34.666666],[-1.95065,34.667913],[-1.958202,34.6663],[-1.959999,34.666382],[-1.960493,34.666722],[-1.964417,34.668558],[-1.964398,34.669902],[-1.964127,34.671046],[-1.962204,34.675493],[-1.962181,34.678193],[-1.961532,34.67875],[-1.961477,34.679203],[-1.96161,34.679684],[-1.961911,34.680174],[-1.961974,34.680479],[-1.961918,34.680962],[-1.962082,34.681306],[-1.962252,34.681492],[-1.962434,34.682212],[-1.962416,34.682553],[-1.962508,34.682869],[-1.962615,34.683844],[-1.962497,34.684192],[-1.962527,34.684612],[-1.962698,34.685286],[-1.962592,34.686162],[-1.96168,34.686852],[-1.959069,34.689601],[-1.957964,34.689792],[-1.956308,34.691628],[-1.954982,34.692544],[-1.954243,34.692964],[-1.952789,34.695339],[-1.950621,34.696365],[-1.943913,34.702599],[-1.94513,34.702796],[-1.945079,34.703616],[-1.944313,34.704018],[-1.943919,34.704122],[-1.94374,34.704257],[-1.943559,34.704261],[-1.943093,34.704657],[-1.942535,34.704936],[-1.942485,34.705147],[-1.942347,34.70525],[-1.941878,34.705491],[-1.9417,34.705473],[-1.941321,34.705582],[-1.940847,34.706044],[-1.940242,34.706301],[-1.939839,34.706361],[-1.939525,34.7065],[-1.939246,34.706516],[-1.936878,34.707198],[-1.936138,34.707503],[-1.935509,34.707607],[-1.935114,34.707739],[-1.934979,34.707893],[-1.934715,34.708016],[-1.934551,34.708052],[-1.93434,34.707998],[-1.934055,34.708066],[-1.933864,34.708234],[-1.933331,34.708518],[-1.933065,34.708494],[-1.932676,34.708353],[-1.93142,34.709048],[-1.930477,34.710016],[-1.929703,34.710935],[-1.930695,34.712193],[-1.932895,34.71406],[-1.933245,34.714649],[-1.934832,34.715523],[-1.935699,34.716217],[-1.937008,34.716989],[-1.939025,34.717721],[-1.940444,34.718355],[-1.940907,34.718647],[-1.937644,34.721449],[-1.935749,34.721971],[-1.934232,34.722007],[-1.933449,34.722488],[-1.931755,34.722069],[-1.930932,34.719869],[-1.929124,34.712055],[-1.928994,34.71093],[-1.929044,34.706464],[-1.929569,34.705322],[-1.930753,34.704188],[-1.931964,34.703631],[-1.937549,34.701758],[-1.938752,34.701096],[-1.93961,34.700364],[-1.940668,34.698687],[-1.941531,34.696988],[-1.942155,34.69398],[-1.935853,34.694135],[-1.934724,34.694001],[-1.928469,34.692233],[-1.926303,34.691522],[-1.926016,34.690435],[-1.926289,34.688956],[-1.927521,34.687545],[-1.927718,34.686482],[-1.927619,34.685989],[-1.928117,34.68502],[-1.927754,34.684651],[-1.926506,34.684312],[-1.925706,34.684024],[-1.926063,34.683192],[-1.925469,34.682798],[-1.925637,34.680196],[-1.926329,34.679956],[-1.926861,34.679373],[-1.927206,34.678579],[-1.926926,34.67739],[-1.926484,34.676188],[-1.926473,34.675785],[-1.917396,34.673666]]]],"c":[-1.938716,34.672694]},{"name":"OUJDA SIDI ZIANE","members":[1,2,3,4],"parts":[[[[-1.902648,34.67479],[-1.89991,34.671947],[-1.899933,34.668109],[-1.898343,34.668042],[-1.897915,34.667841],[-1.89667,34.666127],[-1.895859,34.66485],[-1.895744,34.664363],[-1.897706,34.663906],[-1.90366,34.663548],[-1.91348,34.665457],[-1.914967,34.666295],[-1.91759,34.668099],[-1.917235,34.671761],[-1.917396,34.673666],[-1.926473,34.675785],[-1.926484,34.676188],[-1.926926,34.67739],[-1.927206,34.678579],[-1.926861,34.679373],[-1.926329,34.679956],[-1.925637,34.680196],[-1.925469,34.682798],[-1.926063,34.683192],[-1.925706,34.684024],[-1.926506,34.684312],[-1.927754,34.684651],[-1.928117,34.68502],[-1.927619,34.685989],[-1.927718,34.686482],[-1.927521,34.687545],[-1.926289,34.688956],[-1.926016,34.690435],[-1.926303,34.691522],[-1.925731,34.691375],[-1.92493,34.690855],[-1.924417,34.690368],[-1.923983,34.689388],[-1.921191,34.689417],[-1.911356,34.691363],[-1.907234,34.692047],[-1.906683,34.692603],[-1.904748,34.691475],[-1.904839,34.69132],[-1.903167,34.690667],[-1.903116,34.690801],[-1.902144,34.690445],[-1.90181,34.690146],[-1.899375,34.690149],[-1.8988,34.689846],[-1.898226,34.690243],[-1.895872,34.687773],[-1.894666,34.687942],[-1.893667,34.688492],[-1.89262,34.688953],[-1.891776,34.689824],[-1.891631,34.689897],[-1.889706,34.680577],[-1.894049,34.679119],[-1.899785,34.679062],[-1.901932,34.679478],[-1.902191,34.678293],[-1.903419,34.676636],[-1.903811,34.675729],[-1.902648,34.67479]]]],"c":[-1.914779,34.677842]}],"annexes":[{"name":"AA 6","num":6,"d":1,"parts":[[[[-1.873189,34.731994],[-1.883962,34.715668],[-1.884984,34.714438],[-1.895651,34.704193],[-1.896503,34.702451],[-1.898221,34.701959],[-1.900983,34.705482],[-1.901606,34.70605],[-1.902763,34.70674],[-1.90372,34.707565],[-1.905654,34.707157],[-1.90669,34.707097],[-1.907488,34.70655],[-1.907901,34.706455],[-1.908319,34.706236],[-1.908964,34.705376],[-1.909797,34.706547],[-1.909753,34.706909],[-1.915213,34.70601],[-1.915373,34.70712],[-1.919856,34.706693],[-1.922129,34.725057],[-1.922396,34.725753],[-1.922736,34.72638],[-1.927942,34.73354],[-1.928332,34.734303],[-1.928651,34.735115],[-1.929252,34.737463],[-1.928144,34.737613],[-1.900683,34.736702],[-1.899232,34.73633],[-1.899027,34.7362],[-1.898457,34.736077],[-1.898076,34.736073],[-1.896209,34.735495],[-1.896149,34.735415],[-1.893857,34.734174],[-1.893113,34.735133],[-1.892202,34.734757],[-1.88958,34.734045],[-1.889408,34.734965],[-1.88722,34.734242],[-1.886914,34.734279],[-1.886019,34.733926],[-1.885788,34.734347],[-1.885354,34.734884],[-1.884268,34.73598],[-1.882984,34.735139],[-1.882251,34.734195],[-1.882116,34.733907],[-1.881512,34.733207],[-1.881434,34.733031],[-1.880968,34.732688],[-1.880767,34.732702],[-1.880408,34.732863],[-1.879621,34.732761],[-1.879328,34.732641],[-1.879143,34.732464],[-1.878513,34.732278],[-1.877824,34.731977],[-1.876996,34.733343],[-1.876514,34.733915],[-1.875401,34.736426],[-1.874804,34.736932],[-1.873677,34.739811],[-1.871325,34.739104],[-1.868974,34.738515],[-1.873189,34.731994]]]],"c":[-1.900915,34.721416]},{"name":"AA 8","num":8,"d":1,"parts":[[[[-1.8676,34.705696],[-1.875257,34.70076],[-1.876684,34.699442],[-1.878859,34.697292],[-1.881336,34.694636],[-1.88192,34.694135],[-1.885265,34.692892],[-1.886583,34.692533],[-1.887226,34.692224],[-1.889694,34.690562],[-1.891351,34.689928],[-1.891623,34.689856],[-1.891645,34.689961],[-1.89262,34.688953],[-1.893667,34.688492],[-1.894666,34.687942],[-1.895872,34.687773],[-1.898226,34.690243],[-1.8988,34.689846],[-1.899375,34.690149],[-1.90181,34.690146],[-1.902144,34.690445],[-1.903116,34.690801],[-1.903167,34.690667],[-1.904839,34.69132],[-1.904748,34.691475],[-1.906683,34.692603],[-1.904813,34.694643],[-1.90257,34.695908],[-1.898652,34.699538],[-1.897022,34.701389],[-1.895651,34.704193],[-1.884984,34.714438],[-1.883962,34.715668],[-1.873189,34.731994],[-1.87225,34.731197],[-1.869749,34.728704],[-1.868387,34.725627],[-1.865355,34.720147],[-1.864657,34.718384],[-1.863087,34.713997],[-1.861073,34.710393],[-1.863059,34.709238],[-1.8676,34.705696]]]],"c":[-1.875931,34.709816]},{"name":"AA 14","num":14,"d":0,"parts":[[[[-1.856449,34.700064],[-1.857366,34.687793],[-1.862785,34.687732],[-1.867565,34.687128],[-1.87254,34.686412],[-1.889707,34.680585],[-1.891617,34.689827],[-1.889694,34.690562],[-1.887226,34.692224],[-1.886583,34.692533],[-1.885265,34.692892],[-1.88192,34.694135],[-1.881336,34.694636],[-1.878859,34.697292],[-1.876684,34.699442],[-1.875257,34.70076],[-1.8676,34.705696],[-1.863059,34.709238],[-1.861068,34.710396],[-1.856926,34.703789],[-1.856449,34.700064]]]],"c":[-1.868426,34.695964]},{"name":"AA 13","num":13,"d":0,"parts":[[[[-1.890594,34.676513],[-1.892852,34.679536],[-1.87254,34.686412],[-1.867565,34.687128],[-1.862785,34.687732],[-1.857366,34.687793],[-1.859514,34.678019],[-1.859436,34.678033],[-1.859426,34.675252],[-1.866647,34.675271],[-1.868458,34.67563],[-1.87245,34.675476],[-1.875428,34.676086],[-1.875655,34.668885],[-1.873538,34.667965],[-1.882005,34.666019],[-1.882466,34.668527],[-1.882026,34.670496],[-1.882575,34.676419],[-1.884323,34.676472],[-1.885226,34.676675],[-1.886628,34.677169],[-1.88805,34.677986],[-1.890594,34.676513],[-1.892839,34.679518],[-1.890594,34.676513]]]],"c":[-1.87269,34.676905]},{"name":"AA 15","num":15,"d":0,"parts":[[[[-1.853517,34.671185],[-1.854941,34.660978],[-1.858939,34.658519],[-1.862285,34.654941],[-1.865621,34.65158],[-1.870026,34.649917],[-1.869484,34.649122],[-1.870297,34.647837],[-1.871365,34.647175],[-1.873157,34.646325],[-1.87392,34.64733],[-1.874728,34.647836],[-1.875358,34.648141],[-1.876104,34.648163],[-1.876703,34.648067],[-1.876622,34.652977],[-1.876822,34.656734],[-1.878028,34.65977],[-1.879899,34.66651],[-1.873538,34.667965],[-1.875655,34.668885],[-1.875428,34.676086],[-1.87245,34.675476],[-1.868458,34.67563],[-1.866647,34.675271],[-1.859426,34.675252],[-1.859436,34.678033],[-1.853545,34.679137],[-1.853517,34.671185]]]],"c":[-1.86686,34.663928]},{"name":"AA 11","num":11,"d":0,"parts":[[[[-1.876822,34.656734],[-1.876622,34.652977],[-1.876703,34.648067],[-1.877876,34.64752],[-1.878348,34.647092],[-1.881921,34.64682],[-1.882982,34.646061],[-1.88304,34.645849],[-1.882679,34.64565],[-1.882447,34.64564],[-1.88243,34.645495],[-1.882603,34.645385],[-1.883055,34.645478],[-1.883211,34.645586],[-1.883617,34.645566],[-1.883704,34.645642],[-1.884625,34.645579],[-1.884972,34.645688],[-1.885106,34.645635],[-1.88512,34.645463],[-1.885314,34.645342],[-1.885573,34.645543],[-1.886825,34.64495],[-1.887956,34.644248],[-1.887671,34.64391],[-1.88759,34.643624],[-1.888043,34.643438],[-1.888211,34.643527],[-1.888524,34.643562],[-1.888492,34.643739],[-1.88877,34.643663],[-1.888867,34.643443],[-1.88914,34.643423],[-1.889951,34.643591],[-1.890519,34.643426],[-1.890385,34.643201],[-1.890464,34.642951],[-1.890728,34.643064],[-1.890934,34.643011],[-1.89101,34.642821],[-1.891058,34.642772],[-1.891133,34.642803],[-1.891154,34.64302],[-1.892225,34.644367],[-1.892513,34.646368],[-1.903952,34.646744],[-1.904405,34.645356],[-1.90579,34.645394],[-1.909874,34.646903],[-1.914233,34.647024],[-1.914156,34.647761],[-1.913758,34.64859],[-1.913668,34.648943],[-1.913488,34.652812],[-1.91339,34.653655],[-1.91176,34.661628],[-1.910761,34.664923],[-1.90366,34.663548],[-1.897706,34.663906],[-1.893426,34.664902],[-1.88972,34.665358],[-1.886472,34.665655],[-1.883882,34.665605],[-1.879899,34.66651],[-1.878028,34.65977],[-1.876822,34.656734]]]],"c":[-1.89494,34.654739]},{"name":"AA 9","num":9,"d":2,"parts":[[[[-1.910761,34.664923],[-1.91176,34.661628],[-1.91339,34.653655],[-1.913488,34.652812],[-1.913668,34.648943],[-1.913758,34.64859],[-1.914156,34.647761],[-1.914233,34.647024],[-1.943485,34.647828],[-1.943324,34.648042],[-1.94326,34.648784],[-1.942591,34.649139],[-1.942232,34.649223],[-1.941437,34.649889],[-1.940699,34.650162],[-1.939984,34.650579],[-1.939387,34.65066],[-1.93879,34.650994],[-1.938301,34.651061],[-1.937948,34.651344],[-1.937231,34.651543],[-1.936511,34.651926],[-1.9363,34.651869],[-1.934961,34.652076],[-1.934013,34.652606],[-1.933465,34.652785],[-1.933338,34.653073],[-1.933075,34.65336],[-1.932609,34.653624],[-1.932484,34.654354],[-1.932484,34.654984],[-1.932846,34.655462],[-1.932702,34.655892],[-1.93232,34.656336],[-1.930758,34.657596],[-1.930266,34.658114],[-1.929811,34.658903],[-1.92985,34.659143],[-1.929266,34.660391],[-1.928696,34.661082],[-1.927965,34.661567],[-1.927815,34.662487],[-1.927433,34.663159],[-1.926692,34.664013],[-1.925958,34.664586],[-1.925808,34.664781],[-1.925377,34.667255],[-1.925506,34.667451],[-1.925815,34.667717],[-1.926109,34.668142],[-1.926372,34.669319],[-1.926943,34.671095],[-1.927491,34.671479],[-1.927598,34.672204],[-1.926584,34.673266],[-1.926721,34.674176],[-1.926936,34.674631],[-1.926473,34.675785],[-1.917396,34.673666],[-1.917235,34.671761],[-1.91759,34.668099],[-1.914967,34.666295],[-1.91348,34.665457],[-1.910761,34.664923]]]],"c":[-1.919985,34.661399]},{"name":"AA 10","num":10,"d":2,"parts":[[[[-1.935112,34.67148],[-1.956829,34.655353],[-1.956929,34.655569],[-1.957018,34.656595],[-1.956851,34.65724],[-1.956573,34.657633],[-1.956175,34.657954],[-1.95555,34.658734],[-1.953987,34.662223],[-1.951469,34.666666],[-1.95065,34.667913],[-1.958202,34.6663],[-1.959999,34.666382],[-1.960493,34.666722],[-1.964417,34.668558],[-1.964398,34.669902],[-1.964127,34.671046],[-1.962204,34.675493],[-1.962181,34.678193],[-1.961532,34.67875],[-1.961477,34.679203],[-1.96161,34.679684],[-1.961911,34.680174],[-1.961974,34.680479],[-1.961918,34.680962],[-1.962082,34.681306],[-1.962252,34.681492],[-1.962434,34.682212],[-1.962416,34.682553],[-1.962508,34.682869],[-1.962615,34.683844],[-1.962497,34.684192],[-1.962527,34.684612],[-1.962697,34.685282],[-1.961195,34.685163],[-1.959869,34.684891],[-1.957981,34.684974],[-1.957368,34.68471],[-1.954834,34.684519],[-1.951054,34.68397],[-1.942893,34.681921],[-1.939508,34.681593],[-1.935405,34.680717],[-1.93249,34.679857],[-1.929137,34.677259],[-1.92792,34.676212],[-1.929115,34.675836],[-1.929526,34.675629],[-1.935112,34.67148]]]],"c":[-1.950365,34.670474]},{"name":"AA 16","num":16,"d":2,"parts":[[[[-1.931964,34.703631],[-1.937549,34.701758],[-1.938752,34.701096],[-1.93961,34.700364],[-1.940668,34.698687],[-1.941531,34.696988],[-1.942127,34.694045],[-1.944252,34.688779],[-1.946167,34.682747],[-1.950423,34.683829],[-1.952833,34.684255],[-1.954834,34.684519],[-1.957368,34.68471],[-1.957981,34.684974],[-1.959869,34.684891],[-1.961195,34.685163],[-1.962697,34.685282],[-1.962592,34.686162],[-1.96168,34.686852],[-1.959069,34.689601],[-1.957964,34.689792],[-1.956308,34.691628],[-1.954982,34.692544],[-1.954243,34.692964],[-1.952789,34.695339],[-1.950621,34.696365],[-1.943913,34.702599],[-1.94513,34.702796],[-1.945079,34.703616],[-1.944313,34.704018],[-1.943919,34.704122],[-1.94374,34.704257],[-1.943559,34.704261],[-1.943093,34.704657],[-1.942535,34.704936],[-1.942485,34.705147],[-1.942347,34.70525],[-1.941878,34.705491],[-1.9417,34.705473],[-1.941321,34.705582],[-1.940847,34.706044],[-1.940242,34.706301],[-1.939839,34.706361],[-1.939525,34.7065],[-1.939246,34.706516],[-1.936878,34.707198],[-1.936138,34.707503],[-1.935509,34.707607],[-1.935114,34.707739],[-1.934979,34.707893],[-1.934715,34.708016],[-1.934551,34.708052],[-1.93434,34.707998],[-1.934055,34.708066],[-1.933864,34.708234],[-1.933331,34.708518],[-1.933065,34.708494],[-1.932676,34.708353],[-1.93142,34.709048],[-1.930477,34.710016],[-1.929703,34.710935],[-1.930695,34.712193],[-1.932895,34.71406],[-1.933245,34.714649],[-1.934832,34.715523],[-1.935699,34.716217],[-1.937008,34.716989],[-1.939025,34.717721],[-1.940444,34.718355],[-1.940907,34.718647],[-1.937644,34.721449],[-1.935749,34.721971],[-1.934232,34.722007],[-1.933449,34.722488],[-1.931755,34.722069],[-1.930932,34.719869],[-1.929124,34.712055],[-1.928994,34.71093],[-1.929044,34.706464],[-1.929569,34.705322],[-1.930753,34.704188],[-1.931964,34.703631]]]],"c":[-1.939635,34.702697]},{"name":"AA 5","num":5,"d":1,"parts":[[[[-1.898652,34.699538],[-1.90257,34.695908],[-1.904813,34.694643],[-1.907234,34.692047],[-1.911356,34.691363],[-1.917546,34.69015],[-1.918363,34.692304],[-1.918871,34.694369],[-1.919063,34.696613],[-1.919106,34.700608],[-1.919856,34.706693],[-1.915373,34.70712],[-1.915213,34.70601],[-1.909753,34.706909],[-1.909797,34.706547],[-1.908964,34.705376],[-1.908319,34.706236],[-1.907901,34.706455],[-1.907488,34.70655],[-1.90669,34.707097],[-1.905654,34.707157],[-1.90372,34.707565],[-1.902763,34.70674],[-1.901606,34.70605],[-1.900983,34.705482],[-1.898221,34.701959],[-1.896503,34.702451],[-1.897022,34.701389],[-1.898652,34.699538]]]],"c":[-1.909655,34.698075]},{"name":"AA 18","num":18,"d":0,"parts":[[[[-1.895744,34.664363],[-1.895859,34.66485],[-1.896639,34.666057],[-1.897926,34.66785],[-1.898341,34.668042],[-1.899933,34.668109],[-1.89991,34.671947],[-1.902648,34.67479],[-1.903811,34.675729],[-1.903419,34.676636],[-1.902191,34.678293],[-1.901932,34.679478],[-1.899785,34.679062],[-1.894049,34.679119],[-1.892839,34.679518],[-1.890594,34.676513],[-1.88805,34.677986],[-1.886628,34.677169],[-1.885226,34.676675],[-1.884323,34.676472],[-1.882575,34.676419],[-1.882026,34.670496],[-1.882466,34.668527],[-1.882005,34.666019],[-1.883882,34.665605],[-1.886472,34.665655],[-1.88972,34.665358],[-1.893426,34.664902],[-1.895744,34.664363]]]],"c":[-1.891004,34.671222]},{"name":"AA 2","num":2,"d":3,"parts":[[[[-1.903316,34.684245],[-1.90534,34.68294],[-1.907215,34.680853],[-1.907784,34.680132],[-1.909891,34.6799],[-1.91048,34.681354],[-1.911231,34.6815],[-1.913849,34.682623],[-1.913436,34.684143],[-1.914132,34.683993],[-1.914573,34.683805],[-1.915259,34.684055],[-1.915609,34.683368],[-1.919661,34.685524],[-1.923504,34.687091],[-1.923711,34.689391],[-1.921191,34.689417],[-1.911356,34.691363],[-1.907234,34.692047],[-1.906683,34.692603],[-1.904748,34.691475],[-1.904839,34.69132],[-1.903717,34.690882],[-1.9045,34.689167],[-1.904272,34.688576],[-1.900422,34.685346],[-1.903316,34.684245]]]],"c":[-1.911575,34.686307]},{"name":"AA 1","num":1,"d":3,"parts":[[[[-1.917396,34.673666],[-1.926473,34.675785],[-1.926484,34.676188],[-1.926926,34.67739],[-1.927206,34.678579],[-1.926861,34.679373],[-1.926329,34.679956],[-1.925637,34.680196],[-1.925469,34.682798],[-1.926063,34.683192],[-1.925706,34.684024],[-1.926506,34.684312],[-1.927754,34.684651],[-1.928117,34.68502],[-1.927619,34.685989],[-1.927718,34.686482],[-1.927521,34.687545],[-1.926289,34.688956],[-1.926016,34.690435],[-1.926303,34.691522],[-1.925731,34.691375],[-1.92493,34.690855],[-1.924417,34.690368],[-1.923983,34.689388],[-1.923711,34.689391],[-1.923504,34.687091],[-1.919661,34.685524],[-1.915609,34.683368],[-1.915259,34.684055],[-1.914573,34.683805],[-1.914132,34.683993],[-1.913436,34.684143],[-1.913849,34.682623],[-1.911231,34.6815],[-1.91048,34.681354],[-1.909891,34.6799],[-1.908619,34.680045],[-1.908606,34.67964],[-1.90872,34.679404],[-1.909044,34.679129],[-1.908293,34.678574],[-1.908118,34.678088],[-1.90822,34.677632],[-1.910631,34.672256],[-1.911163,34.672325],[-1.912139,34.672712],[-1.912872,34.673766],[-1.91722,34.676902],[-1.917594,34.676273],[-1.917396,34.673666]]]],"c":[-1.919028,34.682061]},{"name":"AA 7","num":7,"d":1,"parts":[[[[-1.919106,34.700608],[-1.919063,34.696613],[-1.918871,34.694369],[-1.918363,34.692304],[-1.917546,34.69015],[-1.921191,34.689417],[-1.923983,34.689388],[-1.924417,34.690368],[-1.92493,34.690855],[-1.925731,34.691375],[-1.928469,34.692233],[-1.934724,34.694001],[-1.935853,34.694135],[-1.94214,34.693981],[-1.941531,34.696988],[-1.940668,34.698687],[-1.93961,34.700364],[-1.938752,34.701096],[-1.937549,34.701758],[-1.931964,34.703631],[-1.930753,34.704188],[-1.929569,34.705322],[-1.929044,34.706464],[-1.928994,34.71093],[-1.929124,34.712055],[-1.930932,34.719869],[-1.932422,34.723951],[-1.932793,34.725874],[-1.932947,34.727405],[-1.932736,34.729522],[-1.932038,34.731311],[-1.931704,34.731997],[-1.931633,34.732809],[-1.931528,34.733218],[-1.931446,34.734424],[-1.931222,34.735457],[-1.930745,34.736281],[-1.930111,34.736866],[-1.929283,34.737459],[-1.928628,34.735047],[-1.927942,34.73354],[-1.922736,34.72638],[-1.922345,34.725641],[-1.922111,34.724995],[-1.919106,34.700608]]]],"c":[-1.925,34.713048]},{"name":"AA 12","num":12,"d":2,"parts":[[[[-1.927619,34.685989],[-1.928117,34.68502],[-1.927754,34.684651],[-1.926506,34.684312],[-1.925706,34.684024],[-1.926063,34.683192],[-1.925469,34.682798],[-1.925637,34.680196],[-1.926329,34.679956],[-1.926861,34.679373],[-1.927206,34.678579],[-1.926926,34.67739],[-1.926484,34.676188],[-1.926473,34.675785],[-1.92792,34.676212],[-1.929137,34.677259],[-1.93249,34.679857],[-1.935405,34.680717],[-1.939508,34.681593],[-1.942893,34.681921],[-1.946167,34.682747],[-1.944252,34.688779],[-1.942155,34.69398],[-1.935853,34.694135],[-1.934724,34.694001],[-1.928469,34.692233],[-1.926303,34.691522],[-1.926016,34.690435],[-1.926289,34.688956],[-1.927521,34.687545],[-1.927718,34.686482],[-1.927619,34.685989]]]],"c":[-1.936733,34.684894]},{"name":"AA 3","num":3,"d":3,"parts":[[[[-1.891631,34.689897],[-1.889706,34.680577],[-1.894049,34.679119],[-1.899785,34.679062],[-1.90617,34.680298],[-1.907784,34.680132],[-1.907215,34.680853],[-1.90534,34.68294],[-1.903316,34.684245],[-1.900422,34.685346],[-1.904272,34.688576],[-1.9045,34.689167],[-1.903717,34.690882],[-1.903167,34.690667],[-1.903116,34.690801],[-1.902144,34.690445],[-1.90181,34.690146],[-1.899375,34.690149],[-1.8988,34.689846],[-1.898226,34.690243],[-1.895872,34.687773],[-1.894666,34.687942],[-1.893667,34.688492],[-1.89262,34.688953],[-1.891776,34.689824],[-1.891631,34.689897]]]],"c":[-1.896223,34.684795]},{"name":"AA 17","num":17,"d":2,"parts":[[[[-1.92553,34.666406],[-1.925808,34.664781],[-1.925958,34.664586],[-1.926692,34.664013],[-1.927433,34.663159],[-1.927815,34.662487],[-1.927965,34.661567],[-1.928696,34.661082],[-1.929266,34.660391],[-1.92985,34.659143],[-1.929811,34.658903],[-1.930266,34.658114],[-1.930758,34.657596],[-1.93232,34.656336],[-1.932702,34.655892],[-1.932846,34.655462],[-1.932484,34.654984],[-1.932484,34.654354],[-1.932594,34.65371],[-1.932624,34.653615],[-1.933075,34.65336],[-1.933244,34.653191],[-1.933517,34.652779],[-1.934013,34.652606],[-1.934961,34.652076],[-1.93628,34.651873],[-1.936522,34.651928],[-1.937231,34.651543],[-1.937948,34.651344],[-1.938301,34.651061],[-1.93879,34.650994],[-1.939387,34.65066],[-1.939751,34.650645],[-1.940104,34.650532],[-1.940699,34.650162],[-1.941437,34.649889],[-1.942232,34.649223],[-1.942591,34.649139],[-1.94326,34.648784],[-1.943324,34.648042],[-1.943485,34.647828],[-1.94356,34.64783],[-1.949218,34.641958],[-1.951896,34.642917],[-1.951121,34.648037],[-1.953158,34.64984],[-1.954418,34.650713],[-1.955804,34.652868],[-1.956192,34.653969],[-1.956829,34.655353],[-1.930005,34.675292],[-1.929115,34.675836],[-1.92792,34.676212],[-1.926474,34.675783],[-1.926936,34.674631],[-1.926721,34.674176],[-1.926584,34.673266],[-1.927598,34.672204],[-1.927491,34.671479],[-1.926943,34.671095],[-1.926372,34.669319],[-1.926109,34.668142],[-1.925815,34.667717],[-1.925506,34.667451],[-1.925377,34.667255],[-1.92553,34.666406]]]],"c":[-1.940859,34.659023]},{"name":"AA 4","num":4,"d":3,"parts":[[[[-1.902648,34.67479],[-1.89991,34.671947],[-1.899933,34.668109],[-1.898341,34.668042],[-1.897926,34.66785],[-1.896639,34.666057],[-1.895859,34.66485],[-1.895744,34.664363],[-1.897706,34.663906],[-1.90366,34.663548],[-1.91348,34.665457],[-1.914967,34.666295],[-1.91759,34.668099],[-1.917235,34.671761],[-1.917594,34.676273],[-1.91722,34.676902],[-1.912872,34.673766],[-1.912139,34.672712],[-1.911163,34.672325],[-1.910631,34.672256],[-1.90822,34.677632],[-1.908118,34.678088],[-1.908293,34.678574],[-1.909044,34.679129],[-1.90872,34.679404],[-1.908606,34.67964],[-1.908619,34.680045],[-1.90617,34.680298],[-1.901932,34.679478],[-1.902191,34.678293],[-1.903419,34.676636],[-1.903811,34.675729],[-1.902648,34.67479]]]],"c":[-1.908577,34.671854]}],"bbox":{"W":-1.964417,"E":-1.853517,"S":34.641958,"N":34.739811}};
+const PTS=[];
+const DPAL={"SIDI YAHYA":"#e6194b","SIDI DRISS EL QADI":"#4363d8","OUED NACHEF SIDI MAAFA":"#3cb44b","OUJDA SIDI ZIANE":"#f58231"};
+const NPAL={"Propreté":"#e6194b","Éclairage Public":"#f5a623","Trottoirs":"#4363d8","Voiries":"#7b2ff7","Espace vert":"#3cb44b","Chiens errants":"#e07b00"};
+function ncolor(n){return NPAL[n]||"#6b7686";}
+PTS.forEach(p=>{if(p.nature==='Trottoir')p.nature='Trottoirs';});   // normalisation (données anciennes)
+ 
+// Chart.js plugin: draw % on each slice
+const pctPlugin={id:'pct',afterDatasetsDraw(c){
+  const{ctx}=c;const ds=c.data.datasets[0];const total=ds.data.reduce((a,b)=>a+b,0);
+  if(!total)return;
+  const meta=c.getDatasetMeta(0);
+  ctx.save();ctx.font='700 12px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+  meta.data.forEach((arc,i)=>{
+    const v=ds.data[i];if(!v)return;const p=Math.round(v/total*100);
+    if(p<6)return;
+    const pos=arc.tooltipPosition();
+    ctx.fillText(p+'%',pos.x,pos.y);
+  });
+  ctx.restore();
+}};
+if(window.Chart)Chart.register(pctPlugin);
+ 
+const map=L.map('map',{zoomControl:false});
+L.control.zoom({position:'bottomleft'}).addTo(map);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
+let satMode=false;
+function setBase(which){
+  satMode=which==='sat';
+  if(satMode){if(!map.hasLayer(esri))map.addLayer(esri);if(map.hasLayer(osm))map.removeLayer(osm);}
+  else{if(!map.hasLayer(osm))map.addLayer(osm);if(map.hasLayer(esri))map.removeLayer(esri);}
+  document.body.classList.toggle('sat',satMode);
+  document.querySelectorAll('#baseswitch .bs').forEach(b=>b.classList.toggle('on',b.dataset.l===which));
+  restyleBorders();
+}
+function restyleBorders(){
+  Object.values(districtLayers).forEach(l=>{
+    if(!l||!l.setStyle||!l._bc)return;
+    l.setStyle(satMode?{color:shade(l._bc,-70),weight:l._bw+2,opacity:1}:{color:l._bc,weight:l._bw,opacity:1});
+  });
+  Object.keys(annexeLayers).forEach(k=>{
+    const l=annexeLayers[k];
+    if(!l||!l.setStyle||!l._bc)return;
+    l.setStyle(satMode?{color:shade(l._bc,-70),weight:l._bw+1.4,opacity:1}:{color:l._bc,weight:l._bw,opacity:1});
+  });
+}
+ 
+const FULL=[[GEO.bbox.S,GEO.bbox.W],[GEO.bbox.N,GEO.bbox.E]];
+map.fitBounds(FULL,{padding:[10,10]});
+function toLL(parts){return parts.map(poly=>poly.map(ring=>ring.map(c=>[c[1],c[0]])));}
+function padOpts(mz){
+  if(window.innerWidth<=680){
+    return {paddingTopLeft:[12,92],paddingBottomRight:[12,Math.round(window.innerHeight*0.44)],maxZoom:mz};
+  }
+  return {paddingTopLeft:[20,70],paddingBottomRight:[350,20],maxZoom:mz};
+}
+ 
+const DORDER=GEO.districts.map(d=>d.name);
+let districtLayers={}, districtLabels={}, annexeLayers={};
+let pointMarkers=[];
+let current=null, natureState={}, chart=null, history=[], boulFilter=null, axisFilter='all';
+let secName={}, awCache={}, gsetCache={};
+function isAutres(p){return String(p.boulevard||'').trim().toLowerCase()==='autres';}
+// Ensemble des noms de "grands axes" d'un district : boulevards nommés + rues résolues des points "Autres".
+function grandSet(d){
+  if(gsetCache[d])return gsetCache[d];
+  const s=new Set();
+  ptsOfDistrict(d).forEach(p=>{
+    if(isAutres(p)){if(secName[p.id])s.add(normName(secName[p.id]));}
+    else if((p.boulevard||'').trim()!=='')s.add(normName(cleanBoulevard(p.boulevard)));
+  });
+  gsetCache[d]=s;return s;
+}
+// Un point est "grand axe" s'il a un boulevard nommé, s'il est "Autres",
+// ou si sa rue résolue correspond à un grand axe déjà connu (évite le doublon grand/secondaire).
+function axisType(p){
+  if(isAutres(p))return 'grand';
+  if((p.boulevard||'').trim()!=='')return 'grand';
+  const nm=secName[p.id];
+  return (nm&&grandSet(p.district).has(normName(nm)))?'grand':'sec';
+}
+function axisOk(p){return axisFilter==='all'||axisType(p)===axisFilter;}
+function effBoul(p){if((p.boulevard||'').trim()!==''&&!isAutres(p))return cleanBoulevard(p.boulevard);return secName[p.id]||(isAutres(p)?'Autres':'');}
+function dispBoul(nm){return String(nm).toLowerCase()==='autres'?'Autres boulevards':nm;}
+function snap(){return {district:current,natureState:JSON.parse(JSON.stringify(natureState)),boulFilter:boulFilter};}
+function pushHistory(){history.push(snap());}
+function applyState(s){ if(s.district==null){renderAll();} else {enterDistrict(s.district,s.natureState,false); boulFilter=s.boulFilter||null; if(boulFilter){drawPoints(current);loadOneBoulevard(boulFilter,current);} buildStats(current); } }
+function goBack(){ if(!history.length){renderAll();return;} applyState(history.pop()); }
+ 
+function ptsOfDistrict(name){return PTS.filter(p=>p.district===name);}
+ 
+function drawAll(){
+  GEO.districts.forEach(d=>{
+    const col=DPAL[d.name]||"#888";
+    const lyr=L.polygon(toLL(d.parts),{color:col,weight:2.5,fillColor:col,fillOpacity:.14,interactive:false,className:'distpath'});
+    lyr._bc=col;lyr._bw=2.5;
+    lyr.addTo(map);districtLayers[d.name]=lyr;
+    const lbl=L.tooltip({permanent:true,direction:'center',className:'lbl'}).setContent(d.name).setLatLng([d.c[1],d.c[0]]);
+    lbl.addTo(map);districtLabels[d.name]=lbl;
+  });
+  restyleBorders();
+}
+function buildTabs(){
+  const tb=document.getElementById('topbar');tb.innerHTML='';
+  GEO.districts.forEach(d=>{
+    const col=DPAL[d.name]||"#888";
+    const n=ptsOfDistrict(d.name).length;
+    const t=document.createElement('div');t.className='tab';t.style.borderColor=col;
+    t.innerHTML=`<span class="dot" style="background:${col}"></span>${d.name}<span class="cnt">${n}</span>`;
+    t.onclick=()=>enterDistrict(d.name);
+    tb.appendChild(t);
+  });
+}
+function backToDistrict(){
+  document.getElementById('detail').classList.remove('show');
+  document.getElementById('stats').classList.add('show');
+  if(current)map.fitBounds(districtLayers[current].getBounds(),padOpts(17));
+}
+function enterDistrict(name,natState,record){
+  if(record!==false)pushHistory();
+  boulFilter=null;
+  axisFilter='all';syncAxisUI();
+  current=name;natureState=natState?JSON.parse(JSON.stringify(natState)):{};
+  const col=DPAL[name]||"#888";
+  GEO.districts.forEach(d=>{
+    if(map.hasLayer(districtLayers[d.name]))map.removeLayer(districtLayers[d.name]);
+    if(map.hasLayer(districtLabels[d.name]))map.removeLayer(districtLabels[d.name]);
+  });
+  districtLayers[name].setStyle({opacity:1,fillOpacity:.06});
+  districtLayers[name].addTo(map);
+  clearAnnexes();
+  const didx=DORDER.indexOf(name);
+  GEO.annexes.filter(a=>a.d===didx).forEach(a=>{
+    const lyr=L.polygon(toLL(a.parts),{color:shade(col,-40),weight:2.4,dashArray:'7 4',
+      fillColor:col,fillOpacity:.04,interactive:false,className:'annpath'}).addTo(map);
+    lyr._bc=shade(col,-40);lyr._bw=2.4;
+    annexeLayers[a.name]=lyr;
+    const lbl=L.tooltip({permanent:true,direction:'center',className:'alabel'}).setContent(a.name).setLatLng([a.c[1],a.c[0]]);
+    lbl.addTo(map);annexeLayers['lbl_'+a.name]=lbl;
+  });
+  restyleBorders();
+  // zoom max on the district, centered in the visible area (right panel + top tabs offset)
+  map.fitBounds(districtLayers[name].getBounds(),padOpts(17));
+  drawPoints(name);
+  loadBoulevards(name);
+  prefetchDistrict(name);   // précharge en parallèle les autres natures/boulevards (arrière-plan)
+  document.getElementById('topbar').classList.add('hidden');
+  document.getElementById('naturebar').classList.remove('hidden');
+  document.getElementById('back').classList.add('show');
+  document.getElementById('home').classList.add('show');
+  document.getElementById('stats').classList.add('show');
+  document.getElementById('detail').classList.remove('show');
+  document.getElementById('hint').style.display='none';
+  document.querySelector('.stats header').style.background=`linear-gradient(135deg,${col},${shade(col,-18)})`;
+  buildNatureBar(name);
+  setBurger('N');
+  buildStats(name);
+  resolveAutres(name);
+}
+function shade(hex,p){let n=parseInt(hex.slice(1),16),r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;
+ r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+ return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
+function clearAnnexes(){Object.values(annexeLayers).forEach(l=>map.removeLayer(l));annexeLayers={};}
+function clearPoints(){pointMarkers.forEach(m=>map.removeLayer(m));pointMarkers=[];}
+let boulevardLayers=[];
+let boulReq=0;
+function clearBoulevards(){boulReq++;boulevardLayers.forEach(l=>map.removeLayer(l));boulevardLayers=[];}
+function cleanBoulevard(b){return (b||'').replace(/^\s*\d+\s*-\s*/,'').trim();}
+function searchName(b){return cleanBoulevard(b).replace(/\s*\(.*?\)\s*/g,' ').replace(/\s+/g,' ').trim();}
+function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+const OVP=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+const ovpCache={};
+let ovpPending=0;
+function ovpLoad(on){ovpPending=Math.max(0,ovpPending+(on?1:-1));const el=document.getElementById('tload');if(ovpPending>0){el.querySelector('.sp').style.display='';document.getElementById('tloadtxt').textContent='Tracé des boulevards…';el.classList.add('show');}else if(!el.classList.contains('msg')){el.classList.remove('show');}}
+let flashT=null;
+function flashTrace(msg){
+  const el=document.getElementById('tload');
+  el.querySelector('.sp').style.display='none';
+  document.getElementById('tloadtxt').textContent=msg;
+  el.classList.add('show','msg');
+  clearTimeout(flashT);
+  flashT=setTimeout(()=>{el.classList.remove('show','msg');el.querySelector('.sp').style.display='';},3000);
+}
+function fetchTimeout(url,ms){
+  const ctl=new AbortController();const t=setTimeout(()=>ctl.abort(),ms);
+  return fetch(url,{signal:ctl.signal}).finally(()=>clearTimeout(t));
+}
+const LSK='pnovp:';
+const ovpInflight={};
+function lsGet(q){try{const v=localStorage.getItem(LSK+q);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(q,d){try{localStorage.setItem(LSK+q,JSON.stringify(d));}catch(e){}}
+function overpass(q,silent){
+  if(ovpCache[q])return Promise.resolve(ovpCache[q]);
+  const saved=lsGet(q);
+  if(saved){ovpCache[q]=saved;return Promise.resolve(saved);}   // déjà téléchargé -> pas de nouvel appel
+  if(!silent)ovpLoad(true);
+  const done=()=>{if(!silent)ovpLoad(false);};
+  if(ovpInflight[q])return ovpInflight[q].then(v=>{done();return v;},e=>{done();throw e;});
+  let i=0;
+  const one=()=>fetchTimeout(OVP[i]+'?data='+encodeURIComponent(q),5000).then(r=>{if(!r.ok)throw 0;return r.json();})
+    .then(d=>{
+      const slim={elements:(d.elements||[]).filter(e=>e.geometry).map(e=>({geometry:e.geometry,tags:(e.tags&&e.tags.name)?{name:e.tags.name}:undefined}))};
+      ovpCache[q]=slim;lsSet(q,slim);return slim;                // sauvegarde persistante
+    })
+    .catch(()=>{i++;if(i<OVP.length)return one();throw 0;});
+  const pr=one().finally(()=>{delete ovpInflight[q];});
+  ovpInflight[q]=pr;
+  return pr.then(v=>{done();return v;},e=>{done();throw e;});
+}
+// Précharge en tâche de fond (parallèle) les tracés de toutes les natures + boulevards d'un district
+function prefetchDistrict(name){
+  if(WAYS.length)return;                                         // hors-ligne : rien à précharger
+  const b=districtLayers[name].getBounds();const PAD=0.012;
+  const bbox=`${b.getSouth()-PAD},${b.getWest()-PAD},${b.getNorth()+PAD},${b.getEast()+PAD}`;
+  const pts=ptsOfDistrict(name);
+  const jobs=[];
+  [...new Set(pts.map(p=>p.nature))].forEach(nat=>{
+    const nm=[...new Set(pts.filter(p=>p.nature===nat).map(p=>searchName(p.boulevard)).filter(Boolean))];
+    if(nm.length)jobs.push(`[out:json][timeout:25];way[highway][name~"${nm.map(esc).join('|')}",i](${bbox});out geom;`);
+  });
+  [...new Set(pts.map(p=>searchName(p.boulevard)).filter(Boolean))].forEach(nm=>{
+    jobs.push(`[out:json][timeout:25];way[highway][name~"${esc(nm)}",i](${bbox});out geom;`);
+  });
+  let idx=0,active=0;const CONC=4;                               // parallélisme limité (évite le rate-limit)
+  (function pump(){
+    while(active<CONC&&idx<jobs.length){
+      active++;const q=jobs[idx++];
+      overpass(q,true).catch(()=>{}).finally(()=>{active--;pump();});
+    }
+  })();
+}
+// --- Tracés persistants intégrés (remplis par telecharger_traces.py) ---
+const WAYS=(window.WAYS||[]);
+function normName(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function waysFor(names){
+  const q=names.map(normName).filter(Boolean);
+  return WAYS.filter(w=>{const wn=normName(w.name);return q.some(n=>wn.indexOf(n)>=0);});
+}
+function drawTraceWay(g,label){
+  if(!g)return;
+  const casing=L.polyline(g,{color:'#fff',weight:8,opacity:.9}).addTo(map);
+  const line=L.polyline(g,{color:'#111827',weight:4.5,opacity:.95}).addTo(map);
+  line.bindTooltip(label||'Axe',{sticky:true});
+  boulevardLayers.push(casing,line);
+}
+function loadBoulevards(name){
+  clearBoulevards();
+  const pts=ptsOfDistrict(name).filter(p=>natureState[p.nature]!==false&&axisOk(p));
+  const grandNames=[...new Set(pts.filter(p=>!isAutres(p)&&(p.boulevard||'').trim()!=='').map(p=>searchName(p.boulevard)).filter(Boolean))];
+  const secNms=[...new Set(pts.filter(p=>isAutres(p)||(p.boulevard||'').trim()==='').map(p=>secName[p.id]).filter(Boolean))];
+  const myReq=boulReq;
+  const drawEls=(elts)=>{
+    if(current!==name||myReq!==boulReq)return;
+    elts.forEach(w=>{
+      const g=w.ll||(w.geometry&&w.geometry.map(x=>[x.lat,x.lon]));
+      drawTraceWay(g,w.name||(w.tags&&w.tags.name));
+    });
+    pointMarkers.forEach(m=>m.bringToFront());
+  };
+  // Axes secondaires : rues résolues via OSM, géométrie déjà en cache -> tracé direct
+  if(secNms.length&&awCache[name]){
+    const set=new Set(secNms.map(normName));
+    drawEls(awCache[name].filter(w=>set.has(normName(w.name))));
+  }
+  if(!grandNames.length){pointMarkers.forEach(m=>m.bringToFront());return;}
+  if(WAYS.length){drawEls(waysFor(grandNames));return;}
+  const b=districtLayers[name].getBounds();
+  const PAD=0.012;
+  const bbox=`${b.getSouth()-PAD},${b.getWest()-PAD},${b.getNorth()+PAD},${b.getEast()+PAD}`;
+  const q=`[out:json][timeout:25];way[highway][name~"${grandNames.map(esc).join('|')}",i](${bbox});out geom;`;
+  overpass(q).then(d=>drawEls(d.elements||[])).catch(()=>{if(current===name&&myReq===boulReq)flashTrace('Tracés indisponibles (réseau) — réessaie');});
+}
+// --- Résolution des noms de rues (axes secondaires) depuis le plan OSM ---
+function segDist(p,a,b){
+  const px=p[1],py=p[0],ax=a[1],ay=a[0],bx=b[1],by=b[0];
+  const dx=bx-ax,dy=by-ay;let t=0;const L2=dx*dx+dy*dy;
+  if(L2>0)t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/L2));
+  const cx=ax+t*dx,cy=ay+t*dy;const kx=Math.cos(py*Math.PI/180);
+  const ex=(px-cx)*kx,ey=py-cy;return ex*ex+ey*ey;
+}
+function nearestWayName(pt,ways){
+  let best=null,bd=Infinity;
+  for(const w of ways){const g=w.ll;if(!g)continue;
+    for(let i=0;i+1<g.length;i++){const d=segDist(pt,g[i],g[i+1]);if(d<bd){bd=d;best=w.name;}}}
+  return best;
+}
+function fetchAllWays(name){
+  if(awCache[name])return Promise.resolve(awCache[name]);
+  if(WAYS.length){awCache[name]=WAYS.map(w=>({name:w.name,ll:w.ll}));return Promise.resolve(awCache[name]);}
+  const b=districtLayers[name].getBounds();const PAD=0.012;
+  const bbox=`${b.getSouth()-PAD},${b.getWest()-PAD},${b.getNorth()+PAD},${b.getEast()+PAD}`;
+  const q=`[out:json][timeout:25];way[highway][name](${bbox});out geom;`;
+  return overpass(q).then(d=>{
+    const ways=(d.elements||[]).map(e=>({name:e.tags&&e.tags.name,ll:e.geometry&&e.geometry.map(x=>[x.lat,x.lon])})).filter(w=>w.name&&w.ll&&w.ll.length>1);
+    awCache[name]=ways;return ways;
+  });
+}
+function resolveSec(name){
+  const pend=ptsOfDistrict(name).filter(p=>axisType(p)==='sec'&&p.lat!=null&&!secName[p.id]);
+  if(!pend.length)return Promise.resolve();
+  return fetchAllWays(name).then(ways=>{
+    pend.forEach(p=>{const nm=nearestWayName([p.lat,p.lng],ways);if(nm)secName[p.id]=nm;});
+    gsetCache={};
+  }).catch(()=>{});
+}
+// Résout le nom de rue (via OSM) des points "Autres" à l'entrée du district, puis re-trace.
+function resolveAutres(name){
+  const pend=ptsOfDistrict(name).filter(p=>isAutres(p)&&p.lat!=null&&!secName[p.id]);
+  if(!pend.length)return;
+  fetchAllWays(name).then(ways=>{
+    pend.forEach(p=>{const nm=nearestWayName([p.lat,p.lng],ways);if(nm)secName[p.id]=nm;});
+    gsetCache={};
+    if(current!==name)return;
+    buildStats(name);drawPoints(name);loadBoulevards(name);
+  }).catch(()=>{});
+}
+function applyAxis(name){
+  drawPoints(name);loadBoulevards(name);buildNatureBar(name);buildStats(name);
+  if(axisFilter==='sec'||axisFilter==='all'){
+    resolveSec(name).then(()=>{
+      if(current!==name)return;
+      buildStats(name);          // 1) compteur + listing d'abord
+      drawPoints(name);
+      setTimeout(()=>{if(current===name)loadBoulevards(name);},0);  // 2) traçage ensuite
+    });
+  }
+}
+function driveId(u){const m=(u||'').match(/[-\w]{25,}/);return m?m[0]:null;}
+function loadOneBoulevard(bname,districtName){
+  clearBoulevards();
+  const nm=searchName(bname);if(!nm)return;
+  const myReq=boulReq;
+  const draw=(elts)=>{
+    if(myReq!==boulReq)return;
+    elts.forEach(w=>{
+      const g=w.ll||(w.geometry&&w.geometry.map(x=>[x.lat,x.lon]));
+      if(!g)return;
+      boulevardLayers.push(L.polyline(g,{color:'#fff',weight:10,opacity:.95}).addTo(map));
+      const line=L.polyline(g,{color:'#ff2d2d',weight:5.5,opacity:1}).addTo(map);
+      line.bindTooltip(w.name||(w.tags&&w.tags.name)||nm,{sticky:true});
+      boulevardLayers.push(line);
+    });
+    pointMarkers.forEach(m=>m.bringToFront());
+  };
+  if(WAYS.length){draw(waysFor([nm]));return;}           // hors-ligne : calques intégrés
+  const b=districtLayers[districtName].getBounds();
+  const PAD=0.012;
+  const bbox=`${b.getSouth()-PAD},${b.getWest()-PAD},${b.getNorth()+PAD},${b.getEast()+PAD}`;
+  const q=`[out:json][timeout:25];way[highway][name~"${esc(nm)}",i](${bbox});out geom;`;
+  overpass(q).then(d=>draw(d.elements||[])).catch(()=>{if(myReq===boulReq)flashTrace('Tracé indisponible (réseau) — réessaie');});
+}
+function openPoint(p){
+  pushHistory();
+  const c=ncolor(p.nature);
+  // zoom on point, offset for right panel
+  map.fitBounds([[p.lat,p.lng],[p.lat,p.lng]],padOpts(18));
+  loadOneBoulevard(p.boulevard,current);
+  // detail panel
+  document.getElementById('stats').classList.remove('show');
+  document.getElementById('detail').classList.add('show');
+  document.querySelector('#detail header').style.background=`linear-gradient(135deg,${c},${shade(c,-18)})`;
+  document.getElementById('dtitle').textContent=p.id;
+  document.getElementById('dsub').textContent=p.district;
+  const maps=p.lat!=null?`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`:(p.loc||'#');
+  const desc=(p.desc&&p.desc!=='**')?`<div class="field"><div class="flabel">Description</div><div class="fval" style="font-weight:500">${p.desc}</div></div>`:'';
+  document.getElementById('dbody').innerHTML=`
+    <div class="field"><div class="flabel">Nature du point noir</div>
+      <span class="natbadge" style="background:${c}"><span style="width:9px;height:9px;border-radius:50%;background:#fff;display:inline-block"></span>${p.nature}</span></div>
+    <div class="field"><div class="flabel">Boulevard</div><div class="fval">${p.boulevard}</div></div>
+    ${desc}
+    <div id="photoslot"></div>
+    <a class="maps" href="${maps}" target="_blank">📍 Ouvrir dans Google Maps</a>`;
+  const photos=(p.photos||[]).filter(Boolean);
+  if(photos.length)document.getElementById('photoslot').appendChild(renderPhotos(photos));
+  document.getElementById('home').classList.add('show');
+  document.getElementById('back').classList.add('show');
+}
+function dImg(id){return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;}
+function dThumb(id){return `https://lh3.googleusercontent.com/d/${id}=w1000`;}
+function dBig(id){return `https://drive.google.com/thumbnail?id=${id}&sz=w1600`;}
+function dOpen(id){return `https://drive.google.com/file/d/${id}/view`;}
+let LB={list:[],idx:0};
+function lbRender(){
+  document.getElementById('lbimg').src=LB.list[LB.idx];
+  const multi=LB.list.length>1;
+  document.getElementById('lbprev').style.display=multi?'':'none';
+  document.getElementById('lbnext').style.display=multi?'':'none';
+  const cc=document.getElementById('lbcount');
+  cc.style.display=multi?'':'none';cc.textContent=(LB.idx+1)+' / '+LB.list.length;
+}
+function openLightbox(list,idx){
+  LB={list:list.slice(),idx:idx||0};
+  lbRender();
+  document.getElementById('lightbox').classList.add('show');
+}
+function lbStep(d){if(LB.list.length<2)return;LB.idx=(LB.idx+d+LB.list.length)%LB.list.length;lbRender();}
+function closeLightbox(){const lb=document.getElementById('lightbox');lb.classList.remove('show');document.getElementById('lbimg').removeAttribute('src');}
+document.getElementById('lbclose').onclick=closeLightbox;
+document.getElementById('lbprev').onclick=e=>{e.stopPropagation();lbStep(-1);};
+document.getElementById('lbnext').onclick=e=>{e.stopPropagation();lbStep(1);};
+document.getElementById('lightbox').onclick=function(e){if(e.target.id==='lightbox')closeLightbox();};
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('lightbox').classList.contains('show'))return;
+  if(e.key==='Escape')closeLightbox();
+  else if(e.key==='ArrowLeft')lbStep(-1);
+  else if(e.key==='ArrowRight')lbStep(1);
+});
+// switch de fond de carte (toujours visible)
+document.querySelectorAll('#baseswitch .bs').forEach(b=>b.onclick=()=>setBase(b.dataset.l));
+function bigOf(v){return /^(data:|https?:)/.test(v)?v:dBig(v);}
+function photoImg(v){
+  const im=document.createElement('img');im.alt='photo';im.loading='lazy';
+  const isUrl=/^(data:|https?:)/.test(v);
+  im.style.cursor='zoom-in';
+  if(isUrl){ im.src=v; return im; }                        // image intégrée ou URL directe
+  const srcs=[dImg(v),dThumb(v)];let i=0;
+  im.src=srcs[0];
+  im.onerror=function(){
+    i++;
+    if(i<srcs.length){this.src=srcs[i];}
+    else{const d=document.createElement('div');d.className='fval';d.style.color='#9aa';d.style.fontSize='12px';d.textContent='Photo indisponible';this.replaceWith(d);}
+  };
+  return im;
+}
+function renderPhotos(photos){
+  const wrap=document.createElement('div');wrap.className='field';
+  const lab=document.createElement('div');lab.className='flabel';
+  lab.textContent=photos.length>1?`Photos (${photos.length})`:'Photo';
+  wrap.appendChild(lab);
+  const bigs=photos.map(bigOf);
+  if(photos.length===1){
+    const im=photoImg(photos[0]);
+    im.addEventListener('click',()=>openLightbox(bigs,0));
+    wrap.appendChild(im);return wrap;
+  }
+  const box=document.createElement('div');box.className='slider';
+  const stage=document.createElement('div');stage.className='sstage';
+  const cnt=document.createElement('div');cnt.className='scount';
+  let idx=0;
+  const show=()=>{
+    stage.innerHTML='';
+    const im=photoImg(photos[idx]);
+    im.addEventListener('click',()=>openLightbox(bigs,idx));
+    stage.appendChild(im);
+    cnt.textContent=`${idx+1} / ${photos.length}`;
+  };
+  const prev=document.createElement('button');prev.className='snav sprev';prev.type='button';prev.innerHTML='‹';
+  prev.onclick=()=>{idx=(idx-1+photos.length)%photos.length;show();};
+  const next=document.createElement('button');next.className='snav snext';next.type='button';next.innerHTML='›';
+  next.onclick=()=>{idx=(idx+1)%photos.length;show();};
+  box.appendChild(stage);box.appendChild(prev);box.appendChild(next);box.appendChild(cnt);
+  wrap.appendChild(box);show();
+  return wrap;
+}
+function hideDetail(){document.getElementById('detail').classList.remove('show');}
+function drawPoints(name){
+  clearPoints();
+  ptsOfDistrict(name).forEach(p=>{
+    if(p.lat==null)return;
+    if(natureState[p.nature]===false)return;
+    if(!axisOk(p))return;
+    if(boulFilter&&effBoul(p)!==boulFilter)return;
+    const c=ncolor(p.nature);
+    const m=L.circleMarker([p.lat,p.lng],{radius:9,color:'#fff',weight:2,fillColor:c,fillOpacity:.95}).addTo(map);
+    m.on('click',()=>openPoint(p));
+    pointMarkers.push(m);
+  });
+  pointMarkers.forEach(m=>m.bringToFront());
+}
+// Nature tabs — same .tab design/placement as districts
+function buildNatureBar(name){
+  const bar=document.getElementById('naturebar');bar.innerHTML='';
+  const countsAll={};ptsOfDistrict(name).forEach(p=>countsAll[p.nature]=(countsAll[p.nature]||0)+1);
+  const counts={};ptsOfDistrict(name).filter(axisOk).forEach(p=>counts[p.nature]=(counts[p.nature]||0)+1);
+  const natList=Object.keys(countsAll).sort((a,b)=>(counts[b]||0)-(counts[a]||0));
+  natList.forEach(nat=>{if(natureState[nat]===undefined)natureState[nat]=true;});
+  function syncTabs(){
+    [...bar.children].forEach(t=>t.classList.toggle('off',natureState[t.dataset.nat]===false));
+  }
+  natList.forEach(nat=>{
+    const c=ncolor(nat);
+    const t=document.createElement('div');t.className='tab'+(natureState[nat]?'':' off');t.dataset.nat=nat;t.style.borderColor=c;
+    t.innerHTML=`<span class="dot" style="background:${c};border-radius:50%"></span>${nat}<span class="cnt">${counts[nat]||0}</span>`;
+    t.onclick=()=>{
+      const activeNow=natList.filter(n=>natureState[n]!==false);
+      const isOnlyThis=activeNow.length===1&&activeNow[0]===nat;
+      pushHistory();
+      boulFilter=null;
+      if(isOnlyThis){natList.forEach(n=>natureState[n]=true);}      // reclic -> toutes les natures
+      else{natList.forEach(n=>natureState[n]=(n===nat));}           // isole cette nature
+      syncTabs();
+      backToDistrict();          // dézoom + quitte la fiche point si ouverte
+      drawPoints(name);
+      loadBoulevards(name);      // retrace les boulevards de la sélection
+      buildStats(name);
+    };
+    bar.appendChild(t);
+  });
+}
+function refreshReset(){}
+function buildStats(name){
+  document.getElementById('stitle').textContent=name;
+  const all=ptsOfDistrict(name);
+  const counts={};all.filter(axisOk).forEach(p=>counts[p.nature]=(counts[p.nature]||0)+1);
+  const natActive=all.filter(p=>natureState[p.nature]!==false&&axisOk(p));
+  document.getElementById('stotal').textContent=natActive.length;
+  const boulSet=new Set(natActive.map(p=>effBoul(p)).filter(Boolean));
+  document.getElementById('sboul').textContent=boulSet.size;
+  const chartwrap=document.querySelector('.chartwrap');
+  const body=document.getElementById('sbody');body.innerHTML='';
+  if(chart){chart.destroy();chart=null;}
+  const anyOff=Object.keys(natureState).some(k=>natureState[k]===false);
+  const statnat=document.getElementById('statnat');
+  const activeNat=Object.keys(natureState).filter(k=>natureState[k]!==false);
+  if(anyOff&&activeNat.length){
+    const c=ncolor(activeNat[0]);
+    statnat.innerHTML=`<span class="nb" style="background:${c}"><span class="d"></span>${activeNat.join(', ')}</span>`;
+    statnat.classList.add('show');
+  }else{statnat.classList.remove('show');statnat.innerHTML='';}
+  if(anyOff){
+    // nature isolée -> pas de camembert : total + liste cliquable des boulevards concernés
+    chartwrap.style.display='none';
+    const cc=activeNat.length===1?ncolor(activeNat[0]):'#0a5c4a';
+    const boulList=[...new Set(natActive.map(p=>effBoul(p)).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const head=document.createElement('div');head.className='bcount';
+    head.innerHTML=`Axes concernés :`;
+    body.appendChild(head);
+    if(!boulList.length){body.insertAdjacentHTML('beforeend','<p style="color:#6b7686;font-size:12.5px;padding:10px 6px">Aucun axe concerné.</p>');return;}
+    boulList.forEach(bn=>{
+      const sel=boulFilter===bn;
+      const row=document.createElement('div');row.className='blrow'+(sel?' sel':'');
+      row.innerHTML=`<span class="dot" style="background:${cc}"></span><span class="bnm">${dispBoul(bn)}</span>`;
+      row.onclick=()=>{
+        pushHistory();
+        boulFilter=sel?null:bn;
+        drawPoints(current);
+        if(boulFilter){
+          loadOneBoulevard(bn,current);
+          const ll=natActive.filter(p=>effBoul(p)===bn&&p.lat!=null).map(p=>[p.lat,p.lng]);
+          if(ll.length)map.fitBounds(ll,padOpts(17));
+        }else{loadBoulevards(current);backToDistrict();}
+        buildStats(current);
+      };
+      body.appendChild(row);
+    });
+    return;
+  }
+  // toutes les natures -> camembert + barres par nature
+  chartwrap.style.display='';
+  const labels=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const data=labels.map(l=>counts[l]);
+  const cols=labels.map(l=>ncolor(l));
+  if(labels.length&&window.Chart){
+    chart=new Chart(document.getElementById('chart'),{
+      type:'doughnut',
+      data:{labels,datasets:[{data,backgroundColor:cols,borderColor:'#fff',borderWidth:2}]},
+      options:{plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:(x)=>{const t=x.dataset.data.reduce((a,b)=>a+b,0);
+          return ` ${x.label}: ${x.raw} (${Math.round(x.raw/t*100)}%)`;}}}},
+        cutout:'55%',responsive:true,maintainAspectRatio:true}
+    });
+  }
+  const max=Math.max(1,...data);
+  labels.forEach(nat=>{
+    const c=ncolor(nat);const v=counts[nat];
+    const row=document.createElement('div');row.className='srow';
+    row.innerHTML=`<span class="dot" style="background:${c}"></span><span class="nm">${nat}</span>
+      <div class="barwrap"><div class="bar" style="width:${v/max*100}%;background:${c}"></div></div>
+      <span class="v">${v}</span>`;
+    body.appendChild(row);
+  });
+  if(!labels.length)body.innerHTML='<p style="color:#6b7686;font-size:12.5px;padding:8px 6px">Aucun établissement recensé dans ce district.</p>';
+}
+function renderAll(){
+  current=null;natureState={};
+  clearAnnexes();clearPoints();clearBoulevards();if(chart){chart.destroy();chart=null;}
+  GEO.districts.forEach(d=>{
+    districtLayers[d.name].setStyle({opacity:1,fillOpacity:.14});
+    if(!map.hasLayer(districtLayers[d.name]))districtLayers[d.name].addTo(map);
+    if(!map.hasLayer(districtLabels[d.name]))districtLabels[d.name].addTo(map);
+  });
+  restyleBorders();
+  map.fitBounds(FULL,{padding:[10,10]});
+  document.getElementById('topbar').classList.remove('hidden');
+  document.getElementById('naturebar').classList.add('hidden');
+  document.getElementById('back').classList.remove('show');
+  document.getElementById('home').classList.remove('show');
+  document.getElementById('stats').classList.remove('show');
+  document.getElementById('detail').classList.remove('show');
+  document.getElementById('hint').style.display='';
+  setBurger('D');
+  if(typeof closeDrawer==='function')closeDrawer();
+}
+document.getElementById('back').onclick=goBack;
+function syncAxisUI(){document.querySelectorAll('#axistoggle button').forEach(x=>x.classList.toggle('on',x.dataset.a===axisFilter));}
+document.querySelectorAll('#axistoggle button').forEach(b=>b.onclick=()=>{
+  axisFilter=b.dataset.a;syncAxisUI();boulFilter=null;
+  applyAxis(current);
+});
+document.getElementById('home').onclick=()=>{history=[];renderAll();};
+ 
+// ---- Menu burger (mobile) : districts / natures ----
+const tabhost=document.getElementById('tabhost'), drawerbg=document.getElementById('drawerbg');
+function openDrawer(){tabhost.classList.add('open');drawerbg.classList.add('open');}
+function closeDrawer(){tabhost.classList.remove('open');drawerbg.classList.remove('open');}
+document.getElementById('burger').onclick=()=>{tabhost.classList.contains('open')?closeDrawer():openDrawer();};
+function setBurger(l){const b=document.getElementById('blabel');if(b)b.textContent=l;document.getElementById('burger').setAttribute('aria-label',l==='N'?'Menu natures':'Menu districts');}
+drawerbg.onclick=closeDrawer;
+tabhost.addEventListener('click',e=>{if(e.target.closest('.tab'))closeDrawer();});
+ 
+// ---- Feuille du bas glissable (mobile) : tirer vers le haut pour agrandir ----
+function makeSheetDraggable(sheet){
+  const grab=sheet.querySelector('.sheetgrab');if(!grab)return;
+  let sy=0,sh=0,drag=false;
+  const clamp=h=>Math.max(window.innerHeight*0.22,Math.min(window.innerHeight*0.9,h));
+  grab.addEventListener('pointerdown',e=>{drag=true;sy=e.clientY;sh=sheet.getBoundingClientRect().height;sheet.style.transition='none';try{grab.setPointerCapture(e.pointerId);}catch(_){}});
+  grab.addEventListener('pointermove',e=>{if(!drag)return;const h=clamp(sh+(sy-e.clientY));sheet.style.height=h+'px';sheet.style.maxHeight=h+'px';});
+  const end=()=>{if(!drag)return;drag=false;sheet.style.transition='';const h=sheet.getBoundingClientRect().height;const big=h>window.innerHeight*0.52;const t=Math.round((big?0.86:0.40)*window.innerHeight);sheet.style.height=t+'px';sheet.style.maxHeight=t+'px';};
+  grab.addEventListener('pointerup',end);grab.addEventListener('pointercancel',end);
+}
+makeSheetDraggable(document.getElementById('stats'));
+makeSheetDraggable(document.getElementById('detail'));
+ 
+let _rz;
+window.addEventListener('resize',()=>{clearTimeout(_rz);_rz=setTimeout(()=>{
+  map.invalidateSize();
+  if(window.innerWidth>680){
+    ['stats','detail'].forEach(id=>{const s=document.getElementById(id);s.style.height='';s.style.maxHeight='';});
+    closeDrawer();
+  }
+  if(current)map.fitBounds(districtLayers[current].getBounds(),padOpts(17));
+  else map.fitBounds(FULL,{padding:[10,10]});
+},250);});
+drawAll();buildTabs();
+ 
+/* ==================================================================
+   CARTE DES ÉQUIPEMENTS SPORTIFS ET ÉTABLISSEMENTS SANITAIRES — Districts d'Oujda
+   Même interface que la carte des points noirs : le type d'établissement
+   prend la place de la nature, l'établissement celle du boulevard.
+   Source : OpenStreetMap (Overpass), rattachement géométrique aux districts.
+   ================================================================== */
+(function(){
+
+const TYPES = [
+  // --- Établissements publics sportifs ---
+  {cle:'terrain',  sect:'Sport', lib:'Terrain de proximité',   coul:'#3cb44b'},
+  {cle:'salle',    sect:'Sport', lib:'Salle couverte',         coul:'#4363d8'},
+  {cle:'piscine',  sect:'Sport', lib:'Piscine',                coul:'#00a3c4'},
+  {cle:'stade',    sect:'Sport', lib:'Stade',                  coul:'#0a5c4a'},
+  {cle:'complexe', sect:'Sport', lib:'Complexe sportif',       coul:'#7b2ff7'},
+  // --- Établissements publics sanitaires ---
+  {cle:'chu',      sect:'Santé', lib:'CHU',                    coul:'#8e0000'},
+  {cle:'hopital',  sect:'Santé', lib:'Hôpital',                coul:'#e6194b'},
+  {cle:'csu',      sect:'Santé', lib:'Centre de santé urbain', coul:'#f58231'},
+  {cle:'csr',      sect:'Santé', lib:'Centre de santé rural',  coul:'#b8860b'},
+  {cle:'disp',     sect:'Santé', lib:'Dispensaire',            coul:'#c2185b'}
+];
+const LIB = {}, SECT = {};
+TYPES.forEach(n => { LIB[n.cle] = n.lib; SECT[n.cle] = n.sect; NPAL[n.lib] = n.coul; });
+
+const SPORTS = {soccer:'football', football:'football', basketball:'basketball', handball:'handball',
+  volleyball:'volley-ball', tennis:'tennis', athletics:'athlétisme', multi:'multisports',
+  swimming:'natation', boxing:'boxe', karate:'karaté', judo:'judo', table_tennis:'tennis de table',
+  futsal:'futsal', beachvolleyball:'beach-volley', equestrian:'équitation'};
+function sportsDe(t){
+  return (t.sport || '').split(';').map(x => SPORTS[x.trim()] || x.trim()).filter(Boolean).join(', ');
+}
+function nomsDe(t){
+  return ((t.name || '') + ' ' + (t['name:fr'] || '') + ' ' + (t['name:ar'] || '') + ' ' + (t.operator || '')).toLowerCase();
+}
+function estPrive(t){
+  return /^(private|no)$/.test(t.access || '') || /^private$/.test(t['operator:type'] || t.operator_type || '');
+}
+
+/* ---------- Secteur SANITAIRE (public uniquement) — recherche profonde ----------
+   Retenus : CHU, hôpitaux, centres de santé urbains et ruraux, dispensaires.
+   Candidats : tout objet OSM portant un tag de santé OU dont le nom (fr/ar)
+   désigne l'une de ces structures, même mal tagué (bâtiment, bureau…).
+   Écartés : cliniques, polycliniques, cabinets, laboratoires, radiologie,
+   centres médicaux privés, CNSS, pharmacies, tout objet marqué privé. */
+const RX_CHU = /\bchu\b|c\.h\.u|universitaire|الاستشفائي الجامعي|المستشفى الجامعي|m[èe]re.?enfant|الأم والطفل|الام والطفل|oncolog|السرطان|psychiatr|sant[ée] mentale|الأمراض العقلية|العقلية والنفسية|sp[ée]cialit[ée]s|التخصصات/;
+const RX_HOPITAL = /h[oô]pital|hospitalier|hospital|مستشفى|المستشفى|استشفائي|\bchr\b|\bchp\b/;
+const RX_DISP = /dispensaire|مستوصف/;
+const RX_CS = /centre de sant|centre de sante|\bc\.?s\.?u\b|\bc\.?s\.?r\b|مركز صحي|المركز الصحي|مركز الصحة|centre communal de sant|maison d.accouchement|دار الولادة/;
+const RX_PRIVE_SANTE = /clinique|polyclinique|مصحة|عيادة|cabinet|docteur|\bdr\b|dr\.|analyses|laborato|مختبر|تحاليل|radiolog|imagerie|أشعة|scanner|irm\b|dentaire|dentiste|أسنان|kin[ée]|optique|opticien|centre m[ée]dical|المركز الطبي|مركز طبي|priv[ée]|\bcnss\b|pharmac|صيدلية|v[ée]t[ée]rinaire|بيطري|dialyse|تصفية الدم/;
+
+function typeSante(t){
+  const am = t.amenity || '', hc = t.healthcare || '', bu = t.building || '';
+  if(am === 'pharmacy' || hc === 'pharmacy' || am === 'veterinary') return null;
+  const nom = nomsDe(t);
+  const tagSante = /^(hospital|clinic|doctors)$/.test(am) || hc !== '' || bu === 'hospital';
+  const nomSante = RX_CHU.test(nom) || RX_HOPITAL.test(nom) || RX_DISP.test(nom) || RX_CS.test(nom);
+  if(!tagSante && !nomSante) return null;
+  if(estPrive(t) || RX_PRIVE_SANTE.test(nom)) return null;
+
+  const hospit = am === 'hospital' || hc === 'hospital' || bu === 'hospital' || RX_HOPITAL.test(nom);
+  if(RX_CHU.test(nom) && (hospit || /oncolog|السرطان|psychiatr|sant[ée] mentale/.test(nom))) return 'chu';
+  if(hospit) return 'hopital';
+  if(RX_DISP.test(nom)) return 'disp';
+  const publicOp = /minist|وزارة الصحة|d[ée]l[ée]gation|مندوبية/.test(nom)
+                || /^(public|government)$/.test(t['operator:type'] || '');
+  if(RX_CS.test(nom) || (publicOp && (am === 'clinic' || /^(clinic|centre)$/.test(hc)))){
+    if(/rural|\bc\.?s\.?r\b|قروي|القروي|communal|جماعي/.test(nom)) return 'csr';
+    return 'csu';
+  }
+  return null;                                        // non identifiable comme public
+}
+
+/* ---------- Ajouts manuels (facultatif) ----------
+   Établissement public absent d'OpenStreetMap : ajouter ses coordonnées.
+   Exemple : {nom:"CSU Lazaret", type:'csu', lat:34.6801, lng:-1.9002}
+   Types : chu, hopital, csu, csr, disp                                          */
+const AJOUTS = [
+];
+
+/* ---------- Secteur SPORTIF (public uniquement) ----------
+   Écartés : clubs et salles privées, fitness, foot à 5 commerciaux, piscines d'hôtels/villas. */
+function typeSport(t){
+  const le = t.leisure || '', bu = t.building || '';
+  if(!(/^(stadium|sports_centre|sports_hall|pitch|swimming_pool)$/.test(le) || bu === 'sports_hall')) return null;
+  const nom = nomsDe(t);
+  if(estPrive(t) || /fitness|\bgym\b|musculation|salle de sport|club|acad[ée]m|academy|[ée]cole de (foot|tennis|natation)|h[oô]tel|résidence|residence|villa|five|city ?foot|urban ?foot|soccer ?park|padel|priv[ée]|خاص/.test(nom)) return null;
+
+  const proxi = /proximit|القرب/.test(nom);
+  if(le === 'stadium' && !proxi) return 'stade';
+  if(/\bstade\b|ملعب بلدي|الملعب البلدي|ملعب شرفي|الملعب الشرفي/.test(nom) && !proxi && le !== 'swimming_pool') return 'stade';
+
+  if(le === 'swimming_pool' || /piscine|مسبح/.test(nom) || (le === 'sports_centre' && /swimming/.test(t.sport || ''))){
+    if(le === 'swimming_pool' && !t.name && !/^(yes|public|permissive)$/.test(t.access || '')) return null;
+    return 'piscine';
+  }
+  if(le === 'sports_hall' || bu === 'sports_hall' || /salle couverte|salle omnisport|omnisport|gymnase|قاعة/.test(nom)) return 'salle';
+  if(le === 'sports_centre') return proxi ? 'terrain' : 'complexe';
+  if(le === 'stadium' || le === 'pitch') return 'terrain';
+  return null;
+}
+
+function typeDe(t){ return typeSante(t) || typeSport(t); }
+
+function nomDe(t, type){
+  const n = t.name || t['name:fr'] || t['name:ar'];
+  if(n) return n;
+  const sp = sportsDe(t);
+  if(type === 'terrain') return 'Terrain de proximité' + (sp ? ' — ' + sp : '') + ' (sans nom)';
+  return LIB[type] + ' (sans nom)';
+}
+
+function descDe(t, type){
+  const l = ['Secteur : ' + (SECT[type] === 'Sport' ? 'Établissement public sportif' : 'Établissement public sanitaire')];
+  const sp = sportsDe(t); if(sp) l.push('Discipline(s) : ' + sp);
+  if(t.surface) l.push('Revêtement : ' + t.surface);
+  if(t.operator) l.push('Gestion : ' + t.operator);
+  if(t['healthcare:speciality']) l.push('Spécialité : ' + t['healthcare:speciality'].replace(/;/g, ', '));
+  if(t.emergency === 'yes') l.push('Urgences : oui');
+  if(t.beds) l.push('Lits : ' + t.beds);
+  if(t.opening_hours) l.push('Horaires : ' + t.opening_hours);
+  const tel = t.phone || t['contact:phone']; if(tel) l.push('Tél. : ' + tel);
+  const adr = [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' '); if(adr) l.push('Adresse : ' + adr);
+  return l.join('<br>');
+}
+
+/* ---------- Emprises (écoles, stades, complexes) ----------
+   Un terrain situé dans l'enceinte d'une école n'est pas un terrain de proximité ;
+   un terrain situé dans un stade ou un complexe est déjà compté avec lui. */
+function versMasque(e){
+  const g = (e.geometry || []).filter(Boolean);
+  if(g.length < 4) return null;
+  const ring = g.map(c => [c.lon, c.lat]);
+  let W=180,E=-180,S=90,N=-90;
+  ring.forEach(c => { W=Math.min(W,c[0]); E=Math.max(E,c[0]); S=Math.min(S,c[1]); N=Math.max(N,c[1]); });
+  return {ring, W, E, S, N, id: e.type + ':' + e.id};
+}
+
+/* ---------- Rattachement géométrique à un district ---------- */
+function dansAnneau(lat, lng, anneau){
+  let dedans = false;
+  for(let i = 0, j = anneau.length - 1; i < anneau.length; j = i++){
+    const xi = anneau[i][0], yi = anneau[i][1];
+    const xj = anneau[j][0], yj = anneau[j][1];
+    if(((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) dedans = !dedans;
+  }
+  return dedans;
+}
+function districtDe(lat, lng){
+  for(const d of GEO.districts){
+    for(const poly of d.parts){
+      if(!poly.length || !dansAnneau(lat, lng, poly[0])) continue;
+      let trou = false;
+      for(let k = 1; k < poly.length; k++) if(dansAnneau(lat, lng, poly[k])) trou = true;
+      if(!trou) return d.name;
+    }
+  }
+  return null;
+}
+ 
+/* ---------- Récupération OpenStreetMap ---------- */
+const CLE = 'sportsante:v7';   // v4 : CHU / hôpitaux / CSU / CSR / dispensaires publics
+ 
+let ALL_PTS = [];        // liste complète, jamais filtrée (référence maître)
+
+/* ---------- Photo de l'établissement ----------
+   Priorité 1 : une vraie photo si le nœud OSM en référence une (tag `image`,
+   rare mais ça arrive). Priorité 2 (systématique) : une vue satellite
+   rapprochée générée à la volée, centrée sur les coordonnées exactes de
+   l'établissement — aucune clé d'API requise (service public Esri déjà
+   utilisé pour le fond de carte satellite de l'application). */
+function satThumb(lat, lng, rayonM){
+  rayonM = rayonM || 90;
+  const dLat = rayonM / 111320;
+  const dLng = rayonM / (111320 * Math.cos(lat * Math.PI / 180));
+  const bbox = [lng - dLng, lat - dLat, lng + dLng, lat + dLat].join(',');
+  return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export`
+    + `?bbox=${bbox}&bboxSR=4326&imageSR=4326&size=480,360&format=png&f=image`;
+}
+function photosDe(t, lat, lng){
+  // Photos désactivées pour tous les établissements (sur demande) —
+  // conservé en fonction au cas où on voudrait les réactiver plus tard.
+  return [];
+}
+/* ---------- Transformation des éléments OSM en établissements ---------- */
+function traiterElements(els){
+    // Emprises : sortie « geom » (présence de geometry)
+    const ecoles = [], enceintes = [];
+    els.filter(e => e.geometry).forEach(e => {
+      const m = versMasque(e); if(!m) return;
+      const t = e.tags || {};
+      if(t.amenity) ecoles.push(m);
+      else { const ty = typeSport(t); if(ty === 'stade' || ty === 'complexe') enceintes.push(m); }
+    });
+    const dansMasques = (lat, lng, liste, sauf) => liste.some(m =>
+      m.id !== sauf && lng >= m.W && lng <= m.E && lat >= m.S && lat <= m.N && dansAnneau(lat, lng, m.ring));
+
+    const vus = {}, cpt = {};
+    const sante = [];                                   // pour dédoublonnage bâtiment + point
+    const brut = els.filter(e => !e.geometry).map(e => {
+      const lat = e.lat !== undefined ? e.lat : (e.center && e.center.lat);
+      const lng = e.lon !== undefined ? e.lon : (e.center && e.center.lon);
+      if(lat === undefined || lng === undefined) return null;
+      const t = e.tags || {};
+      const type = typeDe(t);
+      if(!type) return null;                          // non public ou non retenu
+      const key = e.type + ':' + e.id;
+      if(type === 'terrain' && (dansMasques(lat, lng, ecoles) || dansMasques(lat, lng, enceintes, key))) return null;
+      const nom = nomDe(t, type);
+      const sig = type + '|' + nom + '|' + lat.toFixed(4) + '|' + lng.toFixed(4);
+      if(vus[sig]) return null;                       // doublon node + way
+      vus[sig] = 1;
+      const dist = districtDe(lat, lng);
+      if(SECT[type] === 'Santé'){
+        // doublon « bâtiment + point » du même établissement (même nom à moins de 150 m)
+        const nn = normName(nom);
+        if(sante.some(s => s.type === type && normName(s.nom) === nn && Math.abs(s.lat-lat) < 0.0014 && Math.abs(s.lng-lng) < 0.0017)) return null;
+        sante.push({type, nom, lat, lng});
+      }
+      if(!dist) return null;                          // hors des quatre districts
+      return {t, type, nom, lat, lng, dist, key};
+    }).filter(Boolean);
+
+    const liste = brut.map(x => {
+      const pre = SECT[x.type] === 'Sport' ? 'SP' : 'SA';
+      cpt[pre] = (cpt[pre] || 0) + 1;
+      return {
+        id: pre + '-' + String(cpt[pre]).padStart(3, '0'),
+        key: x.key,
+        district: x.dist,
+        boulevard: x.nom,
+        nature: LIB[x.type],
+        secteur: SECT[x.type],
+        desc: descDe(x.t, x.type),
+        lat: x.lat, lng: x.lng,
+        nom: x.nom,
+        loc: `https://www.google.com/maps?q=${x.lat},${x.lng}&z=18&hl=fr`,
+        photos: []
+      };
+    });
+    return liste;
+}
+
+/* ---------- Récupération OpenStreetMap (même mécanisme que la carte des écoles) ----------
+   Une seule requête légère, filtrée par tags ; le tri public/privé et le classement
+   par type se font ensuite dans le navigateur. Résultat mis en cache. */
+function chargerEcoles(){
+  const b = GEO.bbox;
+  const zone = `${b.S},${b.W},${b.N},${b.E}`;
+  const q = `[out:json][timeout:25];(`
+    + `nwr["leisure"~"^(stadium|sports_centre|sports_hall|pitch|swimming_pool)$"](${zone});`
+    + `nwr["amenity"~"^(hospital|clinic)$"](${zone});`
+    + `nwr["healthcare"~"^(hospital|clinic|centre)$"](${zone});`
+    + `way["building"~"^(hospital|sports_hall)$"](${zone});`
+    + `);out center tags;`;
+
+  try{
+    const c = localStorage.getItem(CLE);
+    if(c) return Promise.resolve(JSON.parse(c));
+  }catch(e){}
+
+  let i = 0;
+  const tenter = () => fetchTimeout(OVP[i] + '?data=' + encodeURIComponent(q), 20000)
+    .then(r => { if(!r.ok) throw 0; return r.json(); })
+    .catch(() => { i++; if(i < OVP.length) return tenter(); throw 0; });
+
+  return tenter().then(d => {
+    const liste = traiterElements(d.elements || []);
+    try{ localStorage.setItem(CLE, JSON.stringify(liste)); }catch(e){}
+    return liste;
+  });
+}
+
+/* ---------- Application des ajouts manuels ---------- */
+function appliquerAjouts(liste){
+  AJOUTS.forEach((a, i) => {
+    if(!LIB[a.type] || a.lat == null || a.lng == null) return;
+    const dist = districtDe(a.lat, a.lng);
+    if(!dist) return;
+    liste.push({
+      id: (SECT[a.type] === 'Sport' ? 'SP-M' : 'SA-M') + String(i + 1).padStart(2, '0'),
+      key: 'manuel:' + i, district: dist, boulevard: a.nom, nature: LIB[a.type], secteur: SECT[a.type],
+      desc: 'Secteur : ' + (SECT[a.type] === 'Sport' ? 'Établissement public sportif' : 'Établissement public sanitaire') + '<br>Source : ajout manuel',
+      lat: a.lat, lng: a.lng, nom: a.nom,
+      loc: `https://www.google.com/maps?q=${a.lat},${a.lng}&z=18&hl=fr`, photos: []
+    });
+  });
+  return liste;
+}
+
+/* ---------- Secteur actif (sportifs / sanitaires) ---------- */
+let SECTEUR = 'Sport';
+const SUBS = {Sport:'Établissements publics sportifs par type', 'Santé':'Établissements publics sanitaires par type'};
+function ptsSecteur(){ return ALL_PTS.filter(p => p.secteur === SECTEUR); }
+
+function syncSecteurUI(){
+  document.querySelectorAll('#sectorbar button').forEach(b => b.classList.toggle('on', b.dataset.s === SECTEUR));
+  const ns = document.getElementById('nsport'), nh = document.getElementById('nsante');
+  if(ns) ns.textContent = ALL_PTS.filter(p => p.secteur === 'Sport').length;
+  if(nh) nh.textContent = ALL_PTS.filter(p => p.secteur === 'Santé').length;
+  const sub = document.querySelector('#stats header .sub'); if(sub) sub.textContent = SUBS[SECTEUR];
+  const h = document.getElementById('hint');
+  if(h) h.textContent = 'Clique sur un district pour voir ses ' + (SECTEUR === 'Sport' ? 'établissements publics sportifs' : 'établissements publics sanitaires');
+}
+function changerSecteur(sec){
+  if(sec === SECTEUR) return;
+  SECTEUR = sec;
+  PTS.length = 0; ptsSecteur().forEach(p => PTS.push(p));
+  history = [];
+  syncSecteurUI();
+  buildTabs();
+  if(current) enterDistrict(current, null, false);
+  else renderAll();
+}
+document.querySelectorAll('#sectorbar button[data-s]').forEach(b => b.onclick = () => changerSecteur(b.dataset.s));
+
+
+/* ---------- Neutralisation de la mécanique des boulevards ----------
+   Elle n'a pas d'objet ici : aucun appel réseau superflu. */
+loadBoulevards   = function(){};
+prefetchDistrict = function(){};
+resolveAutres    = function(){};
+resolveSec       = function(){};
+loadOneBoulevard = function(){};
+ 
+/* ---------- Reformulation des intitulés ---------- */
+const _buildStats = buildStats;
+buildStats = function(){
+  const r = _buildStats.apply(this, arguments);
+  document.querySelectorAll('#sbody .bcount').forEach(e => {
+    if(/Axes concern/.test(e.textContent)) e.innerHTML = 'Établissements :';
+  });
+  return r;
+};
+ 
+const _openPoint = openPoint;
+openPoint = function(p){
+  const r = _openPoint.apply(this, arguments);
+  if(p && p.nom){
+    const t = document.getElementById('dtitle'); if(t) t.textContent = p.nom;
+    const u = document.getElementById('dsub');   if(u) u.textContent = p.nature + ' — ' + p.district;
+    const lb = document.querySelectorAll('#dbody .flabel');
+    if(lb[0]) lb[0].textContent = "Type d'établissement";
+    if(lb[1]) lb[1].textContent = 'Nom';
+    if(lb[2]) lb[2].textContent = 'Informations';
+  }
+  return r;
+};
+ 
+const _enterDistrict_v=enterDistrict;
+enterDistrict=function(){
+  PTS.length=0; ptsSecteur().forEach(p=>PTS.push(p));
+  return _enterDistrict_v.apply(this,arguments);
+};
+ 
+const _renderAll_v=renderAll;
+renderAll=function(){
+  PTS.length=0; ptsSecteur().forEach(p=>PTS.push(p));
+  return _renderAll_v.apply(this,arguments);
+};
+ 
+/* ---------- Voile de chargement ---------- */
+const style = document.createElement('style');
+style.textContent = `
+#ec-load{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;
+  background:rgba(244,246,248,.94);font-family:inherit;text-align:center;padding:24px}
+#ec-load .bx{max-width:340px}
+#ec-load h3{margin:0 0 8px;font-size:16px;color:var(--accent)}
+#ec-load p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+#ec-load button{margin-top:14px;font-family:inherit;font-size:13px;font-weight:700;padding:9px 16px;
+  border:none;border-radius:11px;background:var(--accent);color:#fff;cursor:pointer;display:none}
+`;
+document.head.appendChild(style);
+ 
+const voile = document.createElement('div');
+voile.id = 'ec-load';
+voile.innerHTML = '<div class="bx"><h3>Chargement des établissements publics sportifs et sanitaires</h3>' +
+  '<p id="ec-msg">Interrogation d\'OpenStreetMap sur les quatre districts…</p>' +
+  '<button id="ec-retry">Réessayer</button></div>';
+document.body.appendChild(voile);
+ 
+function demarrer(){
+  document.getElementById('ec-retry').style.display = 'none';
+  document.getElementById('ec-msg').textContent = "Interrogation d'OpenStreetMap sur les quatre districts…";
+  chargerEcoles().then(liste => {
+    ALL_PTS = appliquerAjouts(liste.slice());
+    PTS.length = 0; ptsSecteur().forEach(p => PTS.push(p));
+    syncSecteurUI();
+    buildTabs();
+    voile.remove();
+  }).catch(() => {
+    document.getElementById('ec-msg').innerHTML =
+      "Impossible de joindre OpenStreetMap.<br>Vérifiez la connexion, puis relancez.";
+    document.getElementById('ec-retry').style.display = 'inline-block';
+  });
+}
+document.getElementById('ec-retry').onclick = demarrer;
+demarrer();
+ 
+})();
+ 
+/* ==================================================================
+   GÉOLOCALISATION EN TEMPS RÉEL
+   Affiche la position exacte de l'utilisateur sur la carte (à jour en
+   continu) et signale par un message quand il entre/sort d'un district.
+   ================================================================== */
+(function(){
+ 
+  let userMarker=null, userCircle=null, watchId=null, userDistrict=null, toastT=null, followMode=false, lastLat=null, lastLng=null, distAlertDismissed=false;
+ 
+  // Test point-dans-polygone (même algorithme que districtDe ci-dessus,
+  // dupliqué ici pour rester indépendant du module écoles).
+  function ptInRing(lat,lng,ring){
+    let inside=false;
+    for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+      const xi=ring[i][0], yi=ring[i][1];
+      const xj=ring[j][0], yj=ring[j][1];
+      if(((yi>lat)!==(yj>lat)) && (lng < (xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+  function districtOfPoint(lat,lng){
+    for(const d of GEO.districts){
+      for(const poly of d.parts){
+        if(!poly.length || !ptInRing(lat,lng,poly[0])) continue;
+        let hole=false;
+        for(let k=1;k<poly.length;k++) if(ptInRing(lat,lng,poly[k])) hole=true;
+        if(!hole) return d.name;
+      }
+    }
+    return null;
+  }
+ 
+  // Distance en mètres entre deux points (approximation équirectangulaire,
+  // largement suffisante à l'échelle d'une ville).
+  const EARTH_R=6371000;
+  function metersBetween(lat1,lng1,lat2,lng2){
+    const toRad=x=>x*Math.PI/180;
+    const x=toRad(lng2-lng1)*Math.cos(toRad((lat1+lat2)/2));
+    const y=toRad(lat2-lat1);
+    return Math.sqrt(x*x+y*y)*EARTH_R;
+  }
+ 
+  // Point le plus proche sur un segment [A,B] par rapport à un point P
+  // (même principe que segDist plus haut dans le fichier, mais renvoie ici
+  // les coordonnées du point le plus proche, pas seulement une distance).
+  function closestPointOnSegment(plat,plng,alat,alng,blat,blng){
+    const kx=Math.cos(alat*Math.PI/180);
+    const px=plng*kx, py=plat, ax=alng*kx, ay=alat, bx=blng*kx, by=blat;
+    const dx=bx-ax, dy=by-ay; const L2=dx*dx+dy*dy;
+    let t=0;
+    if(L2>0) t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/L2));
+    const clat=ay+t*dy, clng=(ax+t*dx)/kx;
+    return {lat:clat,lng:clng,dist:metersBetween(plat,plng,clat,clng)};
+  }
+ 
+  // Point le plus proche sur le contour (anneau extérieur) d'un district donné.
+  function nearestBoundaryPoint(lat,lng,districtName){
+    const d=GEO.districts.find(x=>x.name===districtName);
+    if(!d)return null;
+    let best=null;
+    d.parts.forEach(poly=>{
+      const ring=poly[0];
+      for(let i=0;i+1<ring.length;i++){
+        const c=closestPointOnSegment(lat,lng, ring[i][1],ring[i][0], ring[i+1][1],ring[i+1][0]);
+        if(!best||c.dist<best.dist)best=c;
+      }
+    });
+    return best;
+  }
+ 
+  function fmtDist(m){
+    return m<1000 ? (Math.round(m/10)*10)+' m' : (m/1000).toFixed(1)+' km';
+  }
+  function navUrl(destLat,destLng,origLat,origLng){
+    let u='https://www.google.com/maps/dir/?api=1&destination='+destLat+','+destLng+'&travelmode=driving';
+    if(origLat!=null && origLng!=null) u+='&origin='+origLat+','+origLng;
+    return u;
+  }
+ 
+  function hideDistAlert(){
+    const el=document.getElementById('distalert');
+    if(el)el.classList.remove('show');
+    const cd=document.getElementById('coorddest');
+    if(cd)cd.style.display='none';
+  }
+  function showDistAlert(districtName, nearest, origLat, origLng){
+    const el=document.getElementById('distalert');
+    if(!el)return;
+    const txt=document.getElementById('distalert-txt');
+    const nav=document.getElementById('distalert-nav');
+    if(txt) txt.textContent =
+      'Vous êtes hors du district '+districtName+' — '+fmtDist(nearest.dist)+' du point le plus proche';
+    if(nav) nav.href = navUrl(nearest.lat, nearest.lng, origLat, origLng);
+    el.style.setProperty('--distcol', DPAL[districtName]||'var(--accent)');
+    el.classList.add('show');
+    // Affiche aussi la coordonnée exacte de la cible dans l'encadré de coordonnées
+    const cd=document.getElementById('coorddest'), cv=document.getElementById('coorddestval');
+    if(cd&&cv){ cv.textContent=fmtCoord(nearest.lat,nearest.lng); cd.style.display=''; }
+  }
+ 
+  // Vérifie la position réelle par rapport au district actuellement sélectionné
+  // (variable `current`, déjà utilisée par le reste de l'application).
+  function checkDistrictProximity(lat,lng){
+    if(!current || lat==null){ hideDistAlert(); return; }
+    if(districtOfPoint(lat,lng)===current){ hideDistAlert(); return; }
+    if(distAlertDismissed){ hideDistAlert(); return; }
+    const nb=nearestBoundaryPoint(lat,lng,current);
+    if(!nb){ hideDistAlert(); return; }
+    if(nb.dist>200) showDistAlert(current, nb, lat, lng);
+    else hideDistAlert();
+  }
+ 
+  const distCloseBtn=document.getElementById('distalert-close');
+  if(distCloseBtn)distCloseBtn.onclick=(e)=>{
+    e.preventDefault(); e.stopPropagation();
+    distAlertDismissed=true;
+    hideDistAlert();
+  };
+ 
+  function showGeoToast(msg,color){
+    const el=document.getElementById('geotoast');
+    if(!el)return;
+    el.textContent=msg;
+    el.style.background=color||'#1c2430';
+    el.classList.add('show');
+    clearTimeout(toastT);
+    toastT=setTimeout(()=>el.classList.remove('show'),3500);
+  }
+ 
+  function setBtnState(tracking, following){
+    const btn=document.getElementById('locbtn');
+    if(!btn)return;
+    btn.classList.toggle('on', tracking);
+    btn.classList.toggle('paused', tracking && !following);
+  }
+ 
+  function fmtCoord(lat,lng){return lat.toFixed(6)+', '+lng.toFixed(6);}
+  let coordBoxDismissed=false;
+  function updateCoordBox(){
+    const box=document.getElementById('coordbox');
+    const me=document.getElementById('coordme');
+    if(!box||!me)return;
+    if(lastLat==null||coordBoxDismissed){box.classList.remove('show');return;}
+    me.textContent=fmtCoord(lastLat,lastLng);
+    box.classList.add('show');
+  }
+  const coordCloseBtn=document.getElementById('coordbox-close');
+  if(coordCloseBtn)coordCloseBtn.onclick=(e)=>{
+    e.preventDefault(); e.stopPropagation();
+    coordBoxDismissed=true;
+    updateCoordBox();
+  };
+  function placeUser(lat,lng,accuracy){
+    const isFirstFix=!userMarker;
+    lastLat=lat; lastLng=lng;
+    updateCoordBox();
+    if(!userMarker){
+      userMarker=L.circleMarker([lat,lng],{radius:8,color:'#fff',weight:3,fillColor:'#4285f4',fillOpacity:1}).addTo(map);
+      userCircle=L.circle([lat,lng],{radius:accuracy||30,color:'#4285f4',weight:1,fillColor:'#4285f4',fillOpacity:.12,interactive:false}).addTo(map);
+      userMarker.bindTooltip('Vous êtes ici',{direction:'top'});
+    }else{
+      userMarker.setLatLng([lat,lng]);
+      userCircle.setLatLng([lat,lng]).setRadius(accuracy||30);
+    }
+    userMarker.bringToFront();
+ 
+    // Mode suivi : la carte se recentre automatiquement à chaque nouvelle position.
+    if(followMode){
+      const z=isFirstFix?17:map.getZoom();
+      map.setView([lat,lng],z,{animate:!isFirstFix});
+    }
+ 
+    // Détection de changement de district par rapport à la position réelle
+    const d=districtOfPoint(lat,lng);
+    if(d!==userDistrict){
+      if(userDistrict && d){
+        showGeoToast('Vous avez quitté '+userDistrict+' — entré dans '+d, DPAL[d]||'#1c2430');
+      }else if(userDistrict && !d){
+        showGeoToast('Vous êtes sorti du district '+userDistrict, DPAL[userDistrict]||'#1c2430');
+      }else if(!userDistrict && d){
+        showGeoToast('Vous êtes entré dans '+d, DPAL[d]||'#1c2430');
+      }
+      userDistrict=d;
+    }
+ 
+    // Distance par rapport au district actuellement sélectionné (le cas échéant)
+    checkDistrictProximity(lat,lng);
+  }
+ 
+  // Si l'utilisateur déplace la carte à la main, on arrête de la recentrer
+  // automatiquement — le point continue de se mettre à jour en arrière-plan.
+  // (dragstart n'est déclenché que par une vraie interaction utilisateur,
+  // jamais par un map.setView() appelé depuis le code.)
+  map.on('dragstart',()=>{
+    if(followMode){ followMode=false; setBtnState(!!watchId, false); }
+  });
+ 
+  function stopWatch(){
+    if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null;}
+    followMode=false;
+    setBtnState(false,false);
+    lastLat=null; lastLng=null;
+    updateCoordBox();
+    document.getElementById('coorddest').style.display='none';
+  }
+ 
+  const locBtn=document.getElementById('locbtn');
+  if(locBtn)locBtn.onclick=function(){
+    const btn=this;
+    if(!navigator.geolocation){
+      alert('La géolocalisation n\'est pas supportée par ce navigateur.');
+      return;
+    }
+    // Chaque clic sur le bouton relance l'affichage de l'encadré de coordonnées,
+    // même si l'utilisateur l'avait fermé auparavant avec le "×".
+    coordBoxDismissed=false;
+    // Suivi déjà actif ET carte déjà recentrée dessus -> ce clic arrête tout
+    if(watchId && followMode){ stopWatch(); return; }
+ 
+    // Suivi déjà actif mais recentrage en pause (carte déplacée à la main)
+    // -> ce clic réactive juste la caméra suiveuse, sans redemander le GPS
+    if(watchId && !followMode){
+      followMode=true;
+      setBtnState(true,true);
+      updateCoordBox();
+      if(userMarker) map.setView(userMarker.getLatLng(), map.getZoom(), {animate:true});
+      return;
+    }
+ 
+    // Premier clic : démarre le suivi GPS + active la caméra suiveuse
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+        followMode=true;
+        placeUser(lat,lng,accuracy);
+      },
+      err=>{ btn.classList.add('err'); setTimeout(()=>btn.classList.remove('err'),400);
+        alert('Impossible d\'accéder à votre position : '+err.message); },
+      {enableHighAccuracy:true,timeout:10000}
+    );
+ 
+    // Suivi continu (position + district + caméra mis à jour en temps réel)
+    watchId=navigator.geolocation.watchPosition(
+      pos=>{
+        const {latitude:lat,longitude:lng,accuracy}=pos.coords;
+        placeUser(lat,lng,accuracy);
+      },
+      err=>console.warn('Erreur de suivi position :',err.message),
+      {enableHighAccuracy:true,maximumAge:2000,timeout:10000}
+    );
+    setBtnState(true,true);
+  };
+ 
+  // Si le district sélectionné change (ou qu'on revient à la vue d'ensemble),
+  // on réévalue immédiatement la proximité avec la dernière position connue —
+  // sans attendre le prochain point GPS.
+  const _enterDistrict=enterDistrict;
+  enterDistrict=function(){
+    distAlertDismissed=false;
+    const r=_enterDistrict.apply(this,arguments);
+    checkDistrictProximity(lastLat,lastLng);
+    return r;
+  };
+  const _renderAll=renderAll;
+  renderAll=function(){
+    const r=_renderAll.apply(this,arguments);
+    hideDistAlert();
+    return r;
+  };
+ 
+})();
+ 
+</script></body></html>
