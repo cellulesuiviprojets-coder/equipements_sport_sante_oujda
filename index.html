@@ -222,13 +222,76 @@ html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sa
 #sectorbar button.on[data-s="Santé"]{background:#c62839;color:#fff}
 #sectorbar button.on .n{background:rgba(255,255,255,.25);color:#fff}
 #sectorbar .sh{display:none}
-@media (max-width:680px){.hint,#tload{bottom:70px}
+.hint,#tload{bottom:70px}
 @media (max-width:680px){
   #sectorbar{left:8px;top:60px;bottom:auto;padding:3px;z-index:2250}
   #sectorbar button{padding:7px 11px;font-size:12px}
   #sectorbar .lg{display:none}
   #sectorbar .sh{display:inline}
   .hint,#tload{bottom:16px}
+}
+/* ---- Numéros des établissements sur la carte ---- */
+.leaflet-tooltip.ptnum{background:#fff;border:1px solid rgba(28,36,48,.25);border-radius:6px;padding:0 5px;
+ font:700 11px/17px system-ui,-apple-system,Segoe UI,sans-serif;color:#1c2430;box-shadow:0 1px 3px rgba(0,0,0,.18);white-space:nowrap}
+.leaflet-tooltip.ptnum:before{display:none}
+#map.sansnum .leaflet-tooltip.ptnum{display:none}
+/* ---- Itinéraire optimisé ---- */
+#sectorbar #itinbtn{display:none;background:#1c2430;color:#fff}
+#sectorbar #itinbtn.vis{display:flex}
+#sectorbar #itinbtn.on{background:#f5a623;color:#1c2430}
+#itin{position:fixed;left:14px;top:70px;width:360px;max-height:calc(100vh - 150px);z-index:2350;background:#fff;border-radius:16px;
+ box-shadow:0 12px 36px rgba(20,30,45,.28);display:none;flex-direction:column;overflow:hidden;font-size:13px}
+#itin.show{display:flex}
+#itin .ihead{padding:12px 14px;background:linear-gradient(135deg,#1c2430,#2e3b4e);color:#fff;position:relative}
+#itin .ihead b{display:block;font-size:14.5px}
+#itin .ihead small{display:block;opacity:.8;font-size:11.5px;margin-top:2px;padding-right:30px}
+#itin .ihead button{position:absolute;right:10px;top:10px;border:none;background:rgba(255,255,255,.18);color:#fff;border-radius:8px;width:28px;height:28px;cursor:pointer}
+#itin .ibody{overflow:auto;padding:12px 14px 14px}
+#itin .irow{margin-bottom:11px}
+#itin .irow>label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7686;margin-bottom:5px}
+#itin .iseg{display:flex;background:#f1f3f6;border-radius:10px;padding:3px;gap:3px}
+#itin .iseg button{flex:1;border:none;background:transparent;border-radius:8px;padding:7px 6px;font:inherit;font-size:12px;font-weight:700;color:#5b6b7b;cursor:pointer}
+#itin .iseg button.on{background:#fff;color:#1c2430;box-shadow:0 1px 4px rgba(20,30,45,.15)}
+#itin select,#itin input[type=number]{width:100%;box-sizing:border-box;border:1px solid #dde2e8;border-radius:9px;padding:8px 9px;font:inherit;font-size:13px;margin-top:6px;background:#fff}
+#itin .inum{display:flex;align-items:center;gap:10px}
+#itin .inumstart{display:flex;align-items:center;gap:8px;margin-top:8px}
+#itin .inumstart span{flex:1;font-size:12px;color:#48566a}
+#itin .inumstart input{width:80px;box-sizing:border-box;border:2px solid #1c2430;border-radius:9px;padding:7px 8px;font:inherit;font-size:16px;font-weight:700;text-align:center}
+#itin .inumstart b{font-size:15px;color:#1c2430}
+#itin #iapercu{margin-top:6px;font-size:12px;padding:6px 8px;border-radius:8px;background:#f4f6f8;color:#48566a;min-height:16px}
+#itin #iapercu.ok{background:#e7f6ec;color:#1d6b33}
+#itin #iapercu.err{background:#fdecee;color:#c62839}
+#itin .inum input{width:90px;margin-top:0}
+#itin .inum span{color:#6b7686;font-size:12px}
+#itin .ichk{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+#itin .ichk a{color:#c62839;font-size:12px}
+#itin .iprim{width:100%;border:none;background:#0a5c4a;color:#fff;border-radius:10px;padding:11px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+#itin .iprim:disabled{opacity:.6;cursor:wait}
+#itin #imsg{font-size:12px;color:#6b7686;margin:8px 2px 0;line-height:1.45}
+#itin #imsg.err{color:#c62839}
+#itin .itot{display:flex;gap:8px;margin:12px 0 8px}
+#itin .itot div{flex:1;background:#f4f6f8;border-radius:10px;padding:8px;text-align:center}
+#itin .itot b{display:block;font-size:17px;color:#1c2430}
+#itin .itot span{font-size:11px;color:#6b7686}
+#itin ol{list-style:none;margin:0;padding:0}
+#itin li{display:flex;gap:9px;align-items:flex-start;padding:7px 2px;border-bottom:1px solid #eef1f4}
+#itin li .num{flex:0 0 24px;height:24px;border-radius:50%;background:#1c2430;color:#fff;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center}
+#itin li.dep .num{background:#4285f4}
+#itin li.vu .num{background:#3cb44b}
+#itin li .tx{flex:1;min-width:0}
+#itin li .tx b{display:block;font-size:12.5px;cursor:pointer}
+#itin li .tx small{color:#6b7686;font-size:11px}
+#itin li.vu .tx b{text-decoration:line-through;color:#6b7686}
+#itin li input{margin-top:5px;cursor:pointer}
+#itin .ilinks{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#itin .ilinks{flex-direction:column}
+#itin .ilinks a{background:#1a73e8;color:#fff;text-decoration:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;text-align:center}
+#itin .isec{width:100%;border:1.5px solid #3cb44b;background:#fff;color:#237a31;border-radius:10px;padding:9px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin-top:4px}
+.itnum{width:26px;height:26px;border-radius:50%;background:#1c2430;color:#fff;border:2px solid #fff;font:700 12px/22px system-ui,sans-serif;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.itnum.dep{background:#4285f4}
+.itnum.vu{background:#3cb44b}
+@media (max-width:680px){
+  #itin{left:0;right:0;top:auto;bottom:0;width:auto;max-height:62vh;border-radius:16px 16px 0 0;z-index:2700}
 }
 </style></head><body>
 <div id="map"></div>
@@ -263,7 +326,26 @@ html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sa
 </div>
 <div class="hint" id="hint">Clique sur une étiquette de district pour voir ses établissements</div>
 <div id="tload"><span class="sp"></span><span id="tloadtxt">Tracé des boulevards…</span></div>
-<div id="sectorbar"><button type="button" data-s="Sport" class="on">🏟️ <span class="lg">Établissements publics sportifs</span><span class="sh">Sportifs</span><span class="n" id="nsport">…</span></button><button type="button" data-s="Santé">🏥 <span class="lg">Établissements publics sanitaires</span><span class="sh">Sanitaires</span><span class="n" id="nsante">…</span></button></div>
+<div id="sectorbar"><button type="button" data-s="Sport" class="on">🏟️ <span class="lg">Établissements publics sportifs</span><span class="sh">Sportifs</span><span class="n" id="nsport">…</span></button><button type="button" data-s="Santé">🏥 <span class="lg">Établissements publics sanitaires</span><span class="sh">Sanitaires</span><span class="n" id="nsante">…</span></button><button type="button" id="itinbtn" title="Itinéraire optimisé">🧭 <span class="lg">Itinéraire</span></button></div>
+<div id="itin">
+ <div class="ihead"><b>🧭 Itinéraire optimisé</b><small id="isub"></small><button type="button" id="iclose">✕</button></div>
+ <div class="ibody">
+  <div class="irow"><label>Point de départ</label>
+   <div class="iseg" id="imode"><button type="button" data-m="pos" class="on">📍 Ma position</button><button type="button" data-m="etab">🏁 Dernier visité</button></div>
+   <div id="istartwrap" style="display:none">
+    <div class="inumstart"><span>N° du dernier établissement visité</span><input id="istart" type="text" inputmode="numeric" autocomplete="off" placeholder="ex : 12"><b id="isuf">SP</b></div>
+    <div id="iapercu"></div>
+   </div>
+  </div>
+  <div class="irow"><label>Nombre d'établissements à visiter</label>
+   <div class="inum"><input id="inb" type="number" min="1" value="10"><span id="ireste"></span></div>
+  </div>
+  <div class="irow ichk"><label><input type="checkbox" id="iexcl" checked> Exclure les déjà visités</label><a href="#" id="ireset">Réinitialiser les visites</a></div>
+  <button type="button" id="igo" class="iprim">Calculer l'itinéraire le plus court</button>
+  <div id="imsg"></div>
+  <div id="ires"></div>
+ </div>
+</div>
 <div id="baseswitch"><button type="button" class="bs on" data-l="osm">Plan</button><button type="button" class="bs" data-l="sat">Satellite</button></div>
 <button id="locbtn" type="button" title="Ma position">📍</button>
 <div id="coordbox"><button type="button" id="coordbox-close" aria-label="Fermer">✕</button><div><span class="lbl">Vous :</span><span id="coordme">—</span></div><div id="coorddest" style="display:none"><span class="lbl">Cible :</span><span id="coorddestval">—</span></div></div>
@@ -298,6 +380,7 @@ if(window.Chart)Chart.register(pctPlugin);
  
 const map=L.map('map',{zoomControl:false});
 L.control.zoom({position:'bottomleft'}).addTo(map);
+map.on('zoomend',()=>document.getElementById('map').classList.toggle('sansnum',map.getZoom()<13));
 const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
 let satMode=false;
@@ -739,6 +822,7 @@ function drawPoints(name){
     const c=ncolor(p.nature);
     const m=L.circleMarker([p.lat,p.lng],{radius:9,color:'#fff',weight:2,fillColor:c,fillOpacity:.95}).addTo(map);
     m.on('click',()=>openPoint(p));
+    if(p.id) m.bindTooltip(String(p.id),{permanent:true,direction:'right',offset:[9,0],className:'ptnum'});
     pointMarkers.push(m);
   });
   pointMarkers.forEach(m=>m.bringToFront());
@@ -1201,14 +1285,34 @@ function appliquerAjouts(liste){
 
 /* ---------- Secteur actif (sportifs / sanitaires) ---------- */
 let SECTEUR = 'Sport';
+window.secteurActif = () => SECTEUR;
 const SUBS = {Sport:'Établissements publics sportifs par type', 'Santé':'Établissements publics sanitaires par type'};
 function ptsSecteur(){ return ALL_PTS.filter(p => p.secteur === SECTEUR); }
+
+/* ---------- Numérotation des établissements ----------
+   Sportifs : 1SP, 2SP… · Sanitaires : 1SA, 2SA…
+   Ordre stable : district, puis type, puis nom — les numéros d'un même district se suivent. */
+function numeroter(liste){
+  const ordreD = GEO.districts.map(d => d.name), ordreT = TYPES.map(t => t.lib);
+  ['Sport', 'Santé'].forEach(sec => {
+    const code = sec === 'Sport' ? 'SP' : 'SA';
+    liste.filter(p => p.secteur === sec)
+      .sort((a, b) => ordreD.indexOf(a.district) - ordreD.indexOf(b.district)
+        || ordreT.indexOf(a.nature) - ordreT.indexOf(b.nature)
+        || String(a.nom).localeCompare(String(b.nom), 'fr')
+        || b.lat - a.lat || a.lng - b.lng)
+      .forEach((p, i) => { p.id = (i + 1) + code; });
+  });
+  return liste;
+}
 
 function syncSecteurUI(){
   document.querySelectorAll('#sectorbar button').forEach(b => b.classList.toggle('on', b.dataset.s === SECTEUR));
   const ns = document.getElementById('nsport'), nh = document.getElementById('nsante');
-  if(ns) ns.textContent = ALL_PTS.filter(p => p.secteur === 'Sport').length;
-  if(nh) nh.textContent = ALL_PTS.filter(p => p.secteur === 'Santé').length;
+  // Compteurs : district sélectionné, ou les quatre districts en vue d'ensemble
+  const base = current ? ALL_PTS.filter(p => p.district === current) : ALL_PTS;
+  if(ns) ns.textContent = base.filter(p => p.secteur === 'Sport').length;
+  if(nh) nh.textContent = base.filter(p => p.secteur === 'Santé').length;
   const sub = document.querySelector('#stats header .sub'); if(sub) sub.textContent = SUBS[SECTEUR];
   const h = document.getElementById('hint');
   if(h) h.textContent = 'Clique sur un district pour voir ses ' + (SECTEUR === 'Sport' ? 'établissements publics sportifs' : 'établissements publics sanitaires');
@@ -1261,13 +1365,17 @@ openPoint = function(p){
 const _enterDistrict_v=enterDistrict;
 enterDistrict=function(){
   PTS.length=0; ptsSecteur().forEach(p=>PTS.push(p));
-  return _enterDistrict_v.apply(this,arguments);
+  const r = _enterDistrict_v.apply(this,arguments);
+  syncSecteurUI();
+  return r;
 };
  
 const _renderAll_v=renderAll;
 renderAll=function(){
   PTS.length=0; ptsSecteur().forEach(p=>PTS.push(p));
-  return _renderAll_v.apply(this,arguments);
+  const r = _renderAll_v.apply(this,arguments);
+  syncSecteurUI();
+  return r;
 };
  
 /* ---------- Voile de chargement ---------- */
@@ -1294,7 +1402,7 @@ function demarrer(){
   document.getElementById('ec-retry').style.display = 'none';
   document.getElementById('ec-msg').textContent = "Interrogation d'OpenStreetMap sur les quatre districts…";
   chargerEcoles().then(liste => {
-    ALL_PTS = appliquerAjouts(liste.slice());
+    ALL_PTS = numeroter(appliquerAjouts(liste.map(p => Object.assign({}, p))));
     PTS.length = 0; ptsSecteur().forEach(p => PTS.push(p));
     syncSecteurUI();
     buildTabs();
@@ -1582,4 +1690,329 @@ demarrer();
  
 })();
  
+/* ==================================================================
+   ITINÉRAIRE OPTIMISÉ — tournée de visite des établissements d'un district
+   · Départ : position GPS actuelle, ou dernier établissement visité
+   · Choix des N établissements + ordre de passage minimisant la distance
+     (distances routières OSRM si disponibles, sinon distance à vol d'oiseau)
+   · Mémorise les établissements visités par district et par secteur
+   ================================================================== */
+(function(){
+  const OSRM = 'https://router.project-osrm.org';
+  const ITK = 'tournee:v1:';
+  const MEM = {};
+  const couche = L.layerGroup().addTo(map);
+  let mode = 'pos', resultat = null;
+  const $ = id => document.getElementById(id);
+  const esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* ---------- Mémoire des visites (par secteur + district) ---------- */
+  const cleEtat = () => ITK + secteurActif() + ':' + current;
+  function lireEtat(){
+    try{ const v = JSON.parse(localStorage.getItem(cleEtat())); if(v) return v; }catch(e){}
+    return MEM[cleEtat()] || {visites: [], derniere: []};
+  }
+  function ecrireEtat(e){
+    MEM[cleEtat()] = e;
+    try{ localStorage.setItem(cleEtat(), JSON.stringify(e)); }catch(_){}
+  }
+
+  /* ---------- Établissements concernés : district courant + types affichés ---------- */
+  const visibles = () => PTS.filter(p => p.district === current && p.lat != null && natureState[p.nature] !== false);
+
+  function hav(a, b){
+    const R = 6371000, r = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+    const h = Math.sin(dLat/2)**2 + Math.cos(a.lat*r) * Math.cos(b.lat*r) * Math.sin(dLng/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function avecDelai(url, ms){
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+    return fetch(url, {signal: c.signal}).then(r => { clearTimeout(t); if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+
+  /* ---------- Matrice des distances ---------- */
+  function matrice(pts){
+    const volOiseau = () => {
+      const D = pts.map(a => pts.map(b => hav(a, b) * 1.3));    // facteur de détour urbain
+      return {D, T: D.map(l => l.map(d => d / 8.3)), source: 'vol'};  // ≈ 30 km/h
+    };
+    if(pts.length > 100) return Promise.resolve(volOiseau());
+    const coords = pts.map(p => p.lng.toFixed(6) + ',' + p.lat.toFixed(6)).join(';');
+    return avecDelai(`${OSRM}/table/v1/driving/${coords}?annotations=distance,duration`, 15000)
+      .then(d => {
+        if(d.code !== 'Ok' || !d.distances || d.distances.some(l => l.some(v => v == null))) throw 0;
+        return {D: d.distances, T: d.durations, source: 'route'};
+      })
+      .catch(() => volOiseau());
+  }
+
+  /* ---------- Optimisation : choisir N parmi M et ordonner (départ fixé, parcours ouvert) ---------- */
+  function cout(D, ch){ let s = 0; for(let i = 0; i < ch.length - 1; i++) s += D[ch[i]][ch[i+1]]; return s; }
+  function optimiser(D, n){
+    const m = D.length - 1;                       // indice 0 = départ
+    n = Math.min(n, m);
+    if(n <= 0) return [0];
+    const glouton = premier => {
+      const ch = [0, premier], pris = new Set(ch);
+      while(ch.length < n + 1){
+        const der = ch[ch.length - 1]; let best = -1, bd = Infinity;
+        for(let j = 1; j <= m; j++) if(!pris.has(j) && D[der][j] < bd){ bd = D[der][j]; best = j; }
+        ch.push(best); pris.add(best);
+      }
+      return ch;
+    };
+    const ameliorer = ch => {
+      let cur = cout(D, ch), progres = true, tours = 0;
+      while(progres && tours++ < 60){
+        progres = false;
+        // 2-opt : inverser un segment
+        for(let i = 1; i < ch.length - 1; i++) for(let j = i + 1; j < ch.length; j++){
+          const t = ch.slice(0, i).concat(ch.slice(i, j + 1).reverse(), ch.slice(j + 1));
+          const c = cout(D, t); if(c < cur - 1e-6){ ch = t; cur = c; progres = true; }
+        }
+        // Or-opt : déplacer un établissement ailleurs dans l'ordre
+        for(let i = 1; i < ch.length; i++) for(let j = 1; j < ch.length; j++){
+          if(i === j) continue;
+          const t = ch.slice(); const [x] = t.splice(i, 1); t.splice(j, 0, x);
+          const c = cout(D, t); if(c < cur - 1e-6){ ch = t; cur = c; progres = true; }
+        }
+        // Échange avec un établissement non retenu (quand N < M)
+        if(n < m){
+          const pris = new Set(ch);
+          for(let i = 1; i < ch.length; i++) for(let u = 1; u <= m; u++){
+            if(pris.has(u)) continue;
+            const t = ch.slice(); t[i] = u;
+            const c = cout(D, t);
+            if(c < cur - 1e-6){ pris.delete(ch[i]); pris.add(u); ch = t; cur = c; progres = true; }
+          }
+        }
+      }
+      return ch;
+    };
+    // Plusieurs départs gloutons (les 8 plus proches) → on garde le meilleur
+    const proches = [...Array(m).keys()].map(k => k + 1).sort((a, b) => D[0][a] - D[0][b]).slice(0, 8);
+    let best = null, bc = Infinity;
+    proches.forEach(f => { const ch = ameliorer(glouton(f)); const c = cout(D, ch); if(c < bc){ bc = c; best = ch; } });
+    return best;
+  }
+
+  /* ---------- Position GPS ---------- */
+  function maPosition(){
+    return new Promise((ok, ko) => {
+      if(!navigator.geolocation) return ko(new Error('Géolocalisation non disponible sur cet appareil'));
+      navigator.geolocation.getCurrentPosition(
+        p => ok({lat: p.coords.latitude, lng: p.coords.longitude, nom: 'Ma position', key: null}),
+        e => ko(new Error(e.code === 1 ? 'Accès à la position refusé — autorisez la localisation dans le navigateur' : 'Position introuvable (' + e.message + ')')),
+        {enableHighAccuracy: true, timeout: 15000, maximumAge: 30000});
+    });
+  }
+
+  /* ---------- Interface ---------- */
+  function message(t, err){ const m = $('imsg'); m.textContent = t || ''; m.className = err ? 'err' : ''; }
+  function effacer(){ couche.clearLayers(); resultat = null; $('ires').innerHTML = ''; message(''); }
+
+  function remplirPanneau(){
+    const e = lireEtat(), V = visibles(), vus = new Set(e.visites);
+    const types = [...new Set(V.map(p => p.nature))];
+    $('isub').textContent = `${current} · ${secteurActif() === 'Sport' ? 'Sportifs' : 'Sanitaires'} · ${types.join(', ') || 'aucun type affiché'}`;
+    const restants = V.filter(p => !vus.has(p.key)).length;
+    $('ireste').textContent = `${V.length} établissements · ${restants} non visités`;
+    $('inb').max = V.length;
+    // Numéro de départ proposé : dernier établissement de la dernière tournée
+    const parKey = {}; V.forEach(p => parKey[p.key] = p);
+    const tour = e.derniere.filter(k => parKey[k]);
+    $('isuf').textContent = codeSect();
+    if(tour.length && !$('istart').value) $('istart').value = parseInt(parKey[tour[tour.length - 1]].id, 10);
+  }
+  const codeSect = () => secteurActif() === 'Sport' ? 'SP' : 'SA';
+  /* Retrouve l'établissement à partir du numéro saisi : « 12 », « 12SP », « 12 sp »… */
+  function pointDepart(){
+    const v = $('istart').value.trim().toUpperCase().replace(/\s+/g, '');
+    const m = v.match(/^(\d+)(SP|SA)?$/);
+    if(!m) return {err: v ? 'Numéro invalide — tapez seulement le chiffre, ex : 12' : 'Tapez le numéro affiché à côté du point sur la carte'};
+    if(m[2] && m[2] !== codeSect()) return {err: `${v} n'est pas un établissement ${secteurActif() === 'Sport' ? 'sportif' : 'sanitaire'}`};
+    const id = m[1] + codeSect(), p = PTS.find(x => x.id === id);
+    if(!p) return {err: `Aucun établissement n° ${id}`};
+    return {p};
+  }
+  function apercu(){
+    const r = pointDepart(), el = $('iapercu');
+    if(r.err){ el.textContent = r.err; el.className = 'err'; return null; }
+    const p = r.p;
+    el.innerHTML = `✓ <b>${esc(p.id)}</b> — ${esc(p.nom)} · ${esc(p.nature)}` + (p.district !== current ? ` <i>(district ${esc(p.district)})</i>` : '');
+    el.className = 'ok';
+    return p;
+  }
+  function reglerMode(m){
+    mode = m;
+    document.querySelectorAll('#imode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+    $('istartwrap').style.display = m === 'etab' ? '' : 'none';
+    if(m === 'etab'){
+      // 2e visite : proposer tous les établissements restants
+      const e = lireEtat(), V = visibles(), vus = new Set(e.visites);
+      const p = apercu();
+      if(p){
+        const i = e.derniere.indexOf(p.key);
+        e.derniere.slice(0, i + 1).forEach(x => vus.add(x)); vus.add(p.key);
+      }
+      $('inb').value = Math.max(1, V.filter(x => !vus.has(x.key)).length);
+    }
+  }
+  function ouvrir(){
+    if(!current) return;
+    remplirPanneau();
+    reglerMode(lireEtat().derniere.length ? 'etab' : 'pos');
+    $('itin').classList.add('show'); $('itinbtn').classList.add('on');
+  }
+  function fermer(){ $('itin').classList.remove('show'); $('itinbtn').classList.remove('on'); }
+
+  /* Lien Google Maps unique : départ + tous les établissements dans l'ordre optimisé.
+     Depuis « Ma position », l'origine est omise : Google Maps part de la position du téléphone.
+     Limite Google : 9 étapes intermédiaires + destination = 10 établissements par lien. */
+  const MAXG = 10;
+  function lienGoogle(depart, arrets){
+    const f = p => p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+    const d = arrets[arrets.length - 1], w = arrets.slice(0, -1);
+    return 'https://www.google.com/maps/dir/?api=1&travelmode=driving'
+      + (depart && depart.key ? '&origin=' + f(depart) : '')
+      + '&destination=' + f(d)
+      + (w.length ? '&waypoints=' + w.map(f).join('%7C') : '');
+  }
+  const km = m => m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' km' : Math.round(m) + ' m';
+  const duree = s => { const mn = Math.round(s / 60); return mn >= 60 ? Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0') : mn + ' min'; };
+
+  function dessiner(depart, arrets, trace){
+    couche.clearLayers();
+    const ll = [[depart.lat, depart.lng]].concat(arrets.map(p => [p.lat, p.lng]));
+    if(trace) L.polyline(trace, {color: '#1c2430', weight: 5, opacity: .8}).addTo(couche);
+    else L.polyline(ll, {color: '#1c2430', weight: 4, opacity: .75, dashArray: '8 7'}).addTo(couche);
+    const vus = new Set(lireEtat().visites);
+    const icone = (txt, cls) => L.divIcon({className: '', html: `<div class="itnum ${cls}">${txt}</div>`, iconSize: [26, 26], iconAnchor: [13, 13]});
+    L.marker(ll[0], {icon: icone(depart.key ? '🏁' : 'D', 'dep'), zIndexOffset: 1000}).bindTooltip('Départ : ' + depart.nom).addTo(couche);
+    arrets.forEach((p, i) => L.marker([p.lat, p.lng], {icon: icone(i + 1, vus.has(p.key) ? 'vu' : ''), zIndexOffset: 900})
+      .bindTooltip(`Étape ${i + 1} : ${p.id} — ${p.nom}`).on('click', () => openPoint(p)).addTo(couche));
+    map.fitBounds(L.latLngBounds(ll).pad(0.15), {paddingTopLeft: [window.innerWidth > 680 ? 380 : 10, 60], paddingBottomRight: [window.innerWidth > 680 ? 340 : 10, 80]});
+  }
+
+  function afficherResultat(){
+    const {depart, arrets, legs, total, temps, source} = resultat;
+    const vus = new Set(lireEtat().visites);
+    // Paquets de 10 établissements maximum (limite Google Maps) ; 1 seul lien jusqu'à 10
+    const paquets = [];
+    for(let i = 0; i < arrets.length; i += MAXG) paquets.push([i, Math.min(i + MAXG, arrets.length)]);
+    $('ires').innerHTML =
+      `<div class="itot"><div><b>${arrets.length}</b><span>établissements</span></div><div><b>${km(total)}</b><span>distance</span></div><div><b>${duree(temps)}</b><span>trajet estimé</span></div></div>`
+      + `<div style="font-size:11.5px;color:#6b7686;margin-bottom:6px">${source === 'route' ? 'Distances par la route (OSRM).' : 'Service routier indisponible : distances à vol d\'oiseau ×1,3.'} Temps de visite sur place non inclus.</div>`
+      + `<ol><li class="dep"><span class="num">${depart.key ? '🏁' : 'D'}</span><div class="tx"><b>${depart.key ? esc((PTS.find(x => x.key === depart.key) || {}).id || '') + ' · ' : ''}${esc(depart.nom)}</b><small>Point de départ</small></div></li>`
+      + arrets.map((p, i) => `<li class="${vus.has(p.key) ? 'vu' : ''}" data-i="${i}"><span class="num">${i + 1}</span><div class="tx"><b>${esc(p.id)} · ${esc(p.nom)}</b><small>${esc(p.nature)} · +${km(legs[i])}</small></div><input type="checkbox" title="Visité" ${vus.has(p.key) ? 'checked' : ''}></li>`).join('')
+      + `</ol><div class="ilinks">${paquets.map(([a, b], k) =>
+          `<a class="gm" href="${lienGoogle(a === 0 ? depart : arrets[a - 1], arrets.slice(a, b))}" target="_blank">🧭 ${paquets.length === 1
+            ? 'Ouvrir tout l\'itinéraire dans Google Maps'
+            : `Google Maps — partie ${k + 1} (établissements ${a + 1} à ${b})`}</a>`).join('')}</div>`
+      + (paquets.length > 1 ? `<div style="font-size:11.5px;color:#b26a00;margin-bottom:6px">Google Maps accepte au maximum 10 établissements par itinéraire : au-delà, l'itinéraire est découpé.</div>` : '')
+      + `<button type="button" class="isec" id="ifini">✅ Tournée effectuée : marquer tout comme visité</button>`;
+    $('ires').querySelectorAll('li[data-i]').forEach(li => {
+      const p = arrets[+li.dataset.i];
+      li.querySelector('b').onclick = () => openPoint(p);
+      li.querySelector('input').onchange = ev => {
+        const e = lireEtat(), s = new Set(e.visites);
+        ev.target.checked ? s.add(p.key) : s.delete(p.key);
+        e.visites = [...s]; ecrireEtat(e);
+        afficherResultat(); dessiner(depart, arrets, resultat.trace); remplirPanneau();
+      };
+    });
+    $('ifini').onclick = () => {
+      const e = lireEtat(); e.visites = [...new Set(e.visites.concat(arrets.map(p => p.key)))]; ecrireEtat(e);
+      remplirPanneau(); afficherResultat(); dessiner(depart, arrets, resultat.trace);
+      reglerMode('etab');
+      message('Tournée enregistrée. Pour la prochaine visite, le départ est positionné sur le dernier établissement : cliquez sur « Calculer ».');
+    };
+  }
+
+  function calculer(){
+    const V = visibles();
+    if(!V.length) return message('Aucun établissement affiché dans ce district (vérifiez les types activés).', true);
+    const n = Math.max(1, parseInt($('inb').value, 10) || 10);
+    const e = lireEtat(), vus = new Set(e.visites);
+    const bouton = $('igo'); bouton.disabled = true;
+    effacer();
+
+    let pDepart;
+    if(mode === 'pos'){
+      message('Recherche de votre position…');
+      pDepart = maPosition();
+    }else{
+      const r = pointDepart(), p = r.p;
+      if(!p){ bouton.disabled = false; apercu(); return message(r.err, true); }
+      const k = p.key;
+      // Tout ce qui précède (et inclut) cet établissement dans la dernière tournée est considéré comme visité
+      const i = e.derniere.indexOf(k);
+      e.derniere.slice(0, i + 1).forEach(x => vus.add(x)); vus.add(k);
+      e.visites = [...vus]; ecrireEtat(e);
+      pDepart = Promise.resolve({lat: p.lat, lng: p.lng, nom: p.nom, key: p.key});
+    }
+
+    pDepart.then(depart => {
+      let cand = V.filter(p => p.key !== depart.key && (!$('iexcl').checked || !vus.has(p.key)));
+      if(!cand.length) throw new Error('Tous les établissements affichés ont déjà été visités. Cliquez sur « Réinitialiser les visites » pour recommencer.');
+      if(cand.length > 99) cand = cand.sort((a, b) => hav(depart, a) - hav(depart, b)).slice(0, 99);
+      message(`Calcul des distances entre ${cand.length + 1} points…`);
+      const pts = [depart].concat(cand);
+      return matrice(pts).then(M => {
+        message('Optimisation de l\'ordre de visite…');
+        const ch = optimiser(M.D, n);
+        const arrets = ch.slice(1).map(i => pts[i]);
+        const legs = ch.slice(1).map((j, k) => M.D[ch[k]][j]);
+        resultat = {depart, arrets, legs, total: cout(M.D, ch), temps: cout(M.T, ch), source: M.source, trace: null};
+        // Mémoriser la tournée (sert de liste « dernier visité » à la prochaine visite)
+        const e2 = lireEtat(); e2.derniere = arrets.map(p => p.key); ecrireEtat(e2);
+        dessiner(depart, arrets, null); afficherResultat(); remplirPanneau();
+        $('istart').value = parseInt(arrets[arrets.length - 1].id, 10);  // prochain départ = dernier de cette tournée
+        message(n > cand.length ? `Seulement ${cand.length} établissement(s) restant(s) : tous inclus.` : '');
+        // Tracé routier réel (facultatif)
+        const coords = pts.length && ch.map(i => pts[i].lng.toFixed(6) + ',' + pts[i].lat.toFixed(6)).join(';');
+        return avecDelai(`${OSRM}/route/v1/driving/${coords}?overview=full&geometries=geojson`, 15000)
+          .then(r => {
+            if(r.code !== 'Ok' || !r.routes || !r.routes[0]) return;
+            if(!resultat || resultat.arrets !== arrets) return;
+            resultat.trace = r.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            dessiner(depart, arrets, resultat.trace);
+          }).catch(() => {});
+      });
+    }).catch(err => message(err && err.message ? err.message : 'Calcul impossible.', true))
+      .finally(() => { bouton.disabled = false; });
+  }
+
+  /* ---------- Branchements ---------- */
+  $('itinbtn').onclick = () => $('itin').classList.contains('show') ? fermer() : ouvrir();
+  $('iclose').onclick = fermer;
+  $('igo').onclick = calculer;
+  document.querySelectorAll('#imode button').forEach(b => b.onclick = () => reglerMode(b.dataset.m));
+  $('istart').oninput = () => reglerMode('etab');
+  $('ireset').onclick = ev => {
+    ev.preventDefault();
+    if(!confirm('Effacer les visites enregistrées pour ce district et ce secteur ?')) return;
+    ecrireEtat({visites: [], derniere: []}); effacer(); $('istart').value = ''; remplirPanneau(); reglerMode('pos');
+  };
+
+  let contexte = '';
+  const _enter = enterDistrict;
+  enterDistrict = function(){
+    const r = _enter.apply(this, arguments);
+    const ctx = secteurActif() + ':' + current;
+    if(ctx !== contexte){ contexte = ctx; effacer(); fermer(); $('istart').value = ''; }
+    $('itinbtn').classList.toggle('vis', !!current);
+    if($('itin').classList.contains('show')) remplirPanneau();
+    return r;
+  };
+  const _render = renderAll;
+  renderAll = function(){
+    const r = _render.apply(this, arguments);
+    contexte = ''; effacer(); fermer();
+    $('itinbtn').classList.remove('vis');
+    return r;
+  };
+})();
+
 </script></body></html>
