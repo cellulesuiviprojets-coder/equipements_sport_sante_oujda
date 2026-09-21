@@ -4,6 +4,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{--ink:#1c2430;--line:#dfe4ea;--muted:#6b7686;--accent:#0a5c4a;--bg:#f4f6f8;}
 *{box-sizing:border-box}
@@ -235,6 +237,45 @@ html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sa
  font:700 11px/17px system-ui,-apple-system,Segoe UI,sans-serif;color:#1c2430;box-shadow:0 1px 3px rgba(0,0,0,.18);white-space:nowrap}
 .leaflet-tooltip.ptnum:before{display:none}
 #map.sansnum .leaflet-tooltip.ptnum{display:none}
+
+/* ---- Planning des tournées par annexe ---- */
+#sectorbar #planbtn{background:#0a5c4a;color:#fff}
+#plan{position:fixed;inset:0;z-index:3000;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;padding:16px}
+#plan.show{display:flex}
+#plan .pbox{background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);width:min(1080px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+#plan .phead{padding:14px 18px;background:linear-gradient(135deg,#0a5c4a,#0d7a61);color:#fff;position:relative}
+#plan .phead b{font-size:15px}#plan .phead small{display:block;opacity:.85;font-size:12px;margin-top:2px}
+#plan .phead button{position:absolute;right:12px;top:12px;border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer}
+#plan .pbody{overflow:auto;padding:14px 18px 18px}
+#plan .pparams{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+#plan .pparams label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7686;display:block}
+#plan .pparams select,#plan .pparams input[type=number],#plan .pparams input[type=text]{width:100%;box-sizing:border-box;border:1px solid #dde2e8;border-radius:9px;padding:8px 9px;font:inherit;font-size:13px;margin-top:5px;background:#fff}
+#plan .pchk{font-size:12.5px;display:flex;align-items:center;gap:6px;margin-top:22px}
+#plan .pact{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+#plan .pact button{border:none;border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;background:#eef1f4;color:#1c2430}
+#plan .pact button.pri{background:#0a5c4a;color:#fff}
+#plan .pact button:disabled{opacity:.55;cursor:wait}
+#plan #pmsg{font-size:12px;color:#6b7686;margin-bottom:8px;min-height:16px}
+#plan table{width:100%;border-collapse:collapse;font-size:12.5px}
+#plan th{background:#1c2430;color:#fff;padding:8px 7px;text-align:center;font-weight:700;position:sticky;top:0}
+#plan td{border-bottom:1px solid #e6eaef;padding:7px;text-align:center}
+#plan td.dn{font-weight:700;text-align:left;background:#f7f9fb;vertical-align:middle}
+#plan tr.sub td{background:#e7f3ef;font-weight:700}
+#plan tr.tot td{background:#1c2430;color:#fff;font-weight:700}
+#plan td.pgm{white-space:normal;min-width:110px}
+#plan td.pgm .pmap{display:inline-block;margin:2px;padding:4px 7px;border-radius:7px;border:none;background:#0a5c4a;color:#fff;font:inherit;font-weight:700;font-size:11.5px;cursor:pointer}
+#planleg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2400;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(20,30,45,.25);padding:10px 14px;display:none;max-width:calc(100vw - 24px);font-size:12.5px}
+#planleg.show{display:block}
+#planleg .lh{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+#planleg .lh b{flex:1}
+#planleg button{border:none;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;background:#0a5c4a;color:#fff}
+#planleg .ld{display:flex;flex-wrap:wrap;gap:6px 12px}
+#planleg .ld span{display:flex;align-items:center;gap:5px}
+#planleg .ld i{width:18px;height:5px;border-radius:3px;display:inline-block}
+#plan td.pgm a{display:inline-block;margin:2px;padding:4px 7px;border-radius:7px;background:#1a73e8;color:#fff;text-decoration:none;font-weight:700;font-size:11.5px}
+@media print{#plan td.pgm,#plan th:last-child{display:none}}
+#plan .pnote{font-size:11.5px;color:#6b7686;margin-top:10px;line-height:1.5}
+@media print{body>*:not(#plan){display:none!important}#plan{position:static;background:none;padding:0}#plan .pbox{box-shadow:none;width:100%;max-height:none}#plan .pparams,#plan .pact,#plan .phead button{display:none}}
 /* ---- Itinéraire optimisé ---- */
 #sectorbar #itinbtn{display:none;background:#1c2430;color:#fff}
 #sectorbar #itinbtn.vis{display:flex}
@@ -326,7 +367,7 @@ html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sa
 </div>
 <div class="hint" id="hint">Clique sur une étiquette de district pour voir ses établissements</div>
 <div id="tload"><span class="sp"></span><span id="tloadtxt">Tracé des boulevards…</span></div>
-<div id="sectorbar"><button type="button" data-s="Sport" class="on">🏟️ <span class="lg">Établissements publics sportifs</span><span class="sh">Sportifs</span><span class="n" id="nsport">…</span></button><button type="button" data-s="Santé">🏥 <span class="lg">Établissements publics sanitaires</span><span class="sh">Sanitaires</span><span class="n" id="nsante">…</span></button><button type="button" id="itinbtn" title="Itinéraire optimisé">🧭 <span class="lg">Itinéraire</span></button></div>
+<div id="sectorbar"><button type="button" data-s="Sport" class="on">🏟️ <span class="lg">Établissements publics sportifs</span><span class="sh">Sportifs</span><span class="n" id="nsport">…</span></button><button type="button" data-s="Santé">🏥 <span class="lg">Établissements publics sanitaires</span><span class="sh">Sanitaires</span><span class="n" id="nsante">…</span></button><button type="button" id="planbtn" title="Temps de tournée par annexe">📊 <span class="lg">Planning</span></button><button type="button" id="itinbtn" title="Itinéraire optimisé">🧭 <span class="lg">Itinéraire</span></button></div>
 <div id="itin">
  <div class="ihead"><b>🧭 Itinéraire optimisé</b><small id="isub"></small><button type="button" id="iclose">✕</button></div>
  <div class="ibody">
@@ -346,7 +387,23 @@ html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sa
   <div id="ires"></div>
  </div>
 </div>
-<div id="baseswitch"><button type="button" class="bs on" data-l="osm">Plan</button><button type="button" class="bs" data-l="sat">Satellite</button></div>
+<div id="plan"><div class="pbox">
+ <div class="phead"><b>📊 Planning des tournées — temps consacré par district et par annexe</b><small id="psub"></small><button type="button" id="pclose">✕</button></div>
+ <div class="pbody">
+  <div class="pparams">
+   <div><label>Type d'établissement</label><select id="ptype"></select></div>
+   <div><label>Temps de visite / établissement (min)</label><input id="pvisite" type="number" min="0" value="30"></div>
+   <div><label>Heures de travail / jour</label><input id="pheures" type="number" min="1" step="0.5" value="6"></div>
+   <div><label>Point de départ</label><select id="pdep"><option value="gps" selected>📍 Ma position (localisation)</option><option value="centre">Centre de l'annexe</option><option value="fixe">Point fixe (siège)</option></select>
+     <input id="pfixe" type="text" placeholder="lat, lng  ex : 34.6814, -1.9086" style="display:none"></div>
+   <div><label class="pchk" style="text-transform:none;letter-spacing:0;font-size:12.5px;color:#1c2430"><input type="checkbox" id="prestart" checked> Chaque jour repart du point de départ</label>
+     <label class="pchk" style="text-transform:none;letter-spacing:0;font-size:12.5px;color:#1c2430;margin-top:6px"><input type="checkbox" id="pvis" checked> Exclure les établissements déjà visités</label><small id="pvisinfo" style="display:block;color:#6b7686;font-size:11px;margin-top:3px"></small></div>
+  </div>
+  <div class="pact"><button type="button" id="pgo" class="pri">Calculer le planning</button><button type="button" id="ppdf" disabled>📄 Exporter en PDF</button></div>
+  <div id="pmsg"></div>
+  <div id="pres"></div>
+ </div></div></div>
+<div id="planleg"></div><div id="baseswitch"><button type="button" class="bs on" data-l="osm">Plan</button><button type="button" class="bs" data-l="sat">Satellite</button></div>
 <button id="locbtn" type="button" title="Ma position">📍</button>
 <div id="coordbox"><button type="button" id="coordbox-close" aria-label="Fermer">✕</button><div><span class="lbl">Vous :</span><span id="coordme">—</span></div><div id="coorddest" style="display:none"><span class="lbl">Cible :</span><span id="coorddestval">—</span></div></div>
 <div id="geotoast"></div>
@@ -2013,6 +2070,422 @@ demarrer();
     $('itinbtn').classList.remove('vis');
     return r;
   };
+
+  /* ==================================================================
+     PLANNING DES TOURNÉES — temps consacré par district / annexe
+     Réutilise matrice() + optimiser() de l'itinéraire optimisé.
+     ================================================================== */
+  (function(){
+    const P = id => document.getElementById(id);
+    const enAnneau = (lat, lng, r) => { let d = false;
+      for(let i = 0, j = r.length - 1; i < r.length; j = i++){
+        const xi = r[i][0], yi = r[i][1], xj = r[j][0], yj = r[j][1];
+        if(((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) d = !d; }
+      return d; };
+    const dansParts = (lat, lng, parts) => parts.some(poly => poly.length && enAnneau(lat, lng, poly[0])
+      && !poly.slice(1).some(h => enAnneau(lat, lng, h)));
+    const annexeDe = p => { const a = GEO.annexes.find(a => dansParts(p.lat, p.lng, a.parts)); return a ? a.name : null; };
+    const hm = s => { const mn = Math.round(s / 60); return Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0'); };
+    const kmf = m => (m / 1000).toFixed(1).replace('.', ',');
+    const pause = ms => new Promise(r => setTimeout(r, ms));
+    let lignes = null, lastPrm = null;
+
+    /* ---------- Établissements déjà visités ----------
+       Source : Google Sheet « Fiche Point Noir — Sortie Terrain (réponses) », nature « Terrain à proximité ».
+       Liste de référence intégrée (visites du 17/09/2026, district SIDI YAHYA) ; la page tente aussi
+       de relire la feuille en direct (nécessite que la feuille soit accessible au navigateur). */
+    const SHEET_ID = '1ZhXhhmX49lPlvNdfV9Cq5A9xCJh0oVgj9hjsmVTuhk0', SHEET_GID = '968505826';
+    const VISITES_REF = [
+      {d: 'SIDI YAHYA', nom: 'Nadi Chabiba Riadi Al Wajdi - JS48', lat: 34.659235665150504, lng: -1.885753349208349, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrains de proximité Najd', lat: 34.66281986054887, lng: -1.8750418888156262, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Salle Couverte Omnisports Najd', lat: 34.662314376522865, lng: -1.8750835489920088, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrain de Football Sidi Yahya', lat: 34.66928073730373, lng: -1.862768596844236, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Complexe Sportif', lat: 34.67255607328439, lng: -1.8634246957086158, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Club Socio-Sportif de Proximité Lalla Khadija', lat: 34.682175472464685, lng: -1.8710792962147327, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrain de Football (Bd Oued Eddahab)', lat: 34.68665669763509, lng: -1.8784042713788904, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Stade El Hassania', lat: 34.6878506, lng: -1.8737417, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrain de Proximité Moussa Ibn Noussair', lat: 34.693234987217906, lng: -1.8754230857597824, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Stade Krmosa', lat: 34.69583722179461, lng: -1.8712332485516812, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrain de proximité Derb Al Jouaa', lat: 34.67375650849744, lng: -1.893549763159838, date: '17/09/2026'},
+      {d: 'SIDI YAHYA', nom: 'Terrain Bouknadel', lat: 34.67465430008756, lng: -1.8957820415624662, date: '17/09/2026'}
+    ];
+    let VISITES = VISITES_REF.slice(), visitesSource = 'liste intégrée';
+    const RAYON_VISITE = 250;                      // m : tolérance entre le point relevé et l'établissement OSM
+    function coordsDe(txt){
+      const m = txt.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || txt.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || txt.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      return m ? {lat: +m[1], lng: +m[2]} : null;
+    }
+    function chargerVisitesSheet(){
+      return new Promise(ok => {
+        const cb = '__visites' + Date.now(), sc = document.createElement('script');
+        const fin = v => { try{ delete window[cb]; }catch(e){} sc.remove(); ok(v); };
+        const t = setTimeout(() => fin(null), 8000);
+        window[cb] = rep => {
+          clearTimeout(t);
+          try{
+            const out = [];
+            (rep.table.rows || []).forEach(r => {
+              const cells = (r.c || []).map(c => c && c.v != null ? String(c.v) : '');
+              if(!cells.some(x => /terrain\s*[àa]\s*proximit/i.test(x))) return;
+              const d = cells.find(x => GEO.districts.some(g => g.name === x.trim()));
+              const c = cells.map(coordsDe).find(Boolean);
+              if(d && c){ const i = cells.findIndex(x => /terrain\s*[àa]\s*proximit/i.test(x));
+                out.push({d: d.trim(), nom: (cells[i + 1] || 'Établissement visité').split(' / ')[0].trim(), lat: c.lat, lng: c.lng, date: String(cells[0]).slice(0, 10)}); }
+            });
+            fin(out.length ? out : null);
+          }catch(e){ fin(null); }
+        };
+        sc.onerror = () => { clearTimeout(t); fin(null); };
+        sc.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:${cb}`;
+        document.head.appendChild(sc);
+      });
+    }
+    function infoVisites(){
+      const parD = {}; VISITES.forEach(v => parD[v.d] = (parD[v.d] || 0) + 1);
+      P('pvisinfo').textContent = VISITES.length + ' visite(s) relevée(s) — ' + Object.entries(parD).map(([d, n]) => d + ' : ' + n).join(', ') + ' (' + visitesSource + ')';
+    }
+    chargerVisitesSheet().then(v => { if(v){ VISITES = v; visitesSource = 'Google Sheet, à jour'; } infoVisites(); });
+    /* Rattache chaque visite à l'établissement le plus proche (même district, rayon 250 m, sans doublon) */
+    function etabsVisites(pts){
+      const pris = new Set();
+      VISITES.forEach(v => {
+        let best = null, bd = RAYON_VISITE;
+        pts.forEach(p => { if(pris.has(p.key) || p.district !== v.d) return; const d = hav(v, p); if(d < bd){ bd = d; best = p; } });
+        if(best) pris.add(best.key);
+      });
+      return pris;
+    }
+
+    function remplirTypes(){
+      const sel = P('ptype');
+      sel.innerHTML = '<option value="Sport">Établissements sportifs</option><option value="Santé">Établissements sanitaires</option>';
+      sel.value = secteurActif();
+      P('psub').textContent = 'Établissements publics sportifs et sanitaires des quatre districts';
+      infoVisites();
+    }
+
+    /* Découpage de la tournée optimisée en journées de travail */
+    /* Découpage de la tournée optimisée en journées de travail.
+       - Chaque journée = trajet départ → 1er établissement, visites, trajets entre établissements,
+         et (option « repart du départ ») retour au point de départ en fin de journée.
+       - Un établissement n'est ajouté à la journée que si la visite ET le retour tiennent dans l'horaire. */
+    function journees(M, ch, visite, maxJour, restart){
+      const jourList = [];
+      let cur = null, prec = 0;
+      const fermerJour = () => {
+        if(!cur) return;
+        if(restart){ cur.t += M.T[prec][0]; cur.d += M.D[prec][0]; }
+        jourList.push(cur);
+      };
+      for(let k = 1; k < ch.length; k++){
+        const j = ch[k];
+        const retour = restart ? M.T[j][0] : 0;
+        if(cur && cur.t + M.T[prec][j] + visite + retour <= maxJour){
+          cur.t += M.T[prec][j] + visite; cur.d += M.D[prec][j]; cur.n++; cur.idx.push(j);
+        }else{
+          fermerJour();
+          const src = (cur && !restart) ? prec : 0;           // sans retour : on reprend là où on s'est arrêté
+          cur = {t: M.T[src][j] + visite, d: M.D[src][j], n: 1, idx: [j], src};
+        }
+        prec = j;
+      }
+      fermerJour();
+      // Ré-optimisation de l'ordre à l'intérieur de chaque journée (boucle fermée si retour au départ)
+      jourList.forEach(jr => {
+        const coutJ = seq => { let c = 0, a = jr.src; seq.forEach(x => { c += M.D[a][x]; a = x; }); return c + (restart ? M.D[a][0] : 0); };
+        let seq = jr.idx.slice(), best = coutJ(seq), prog = true, tours = 0;
+        while(prog && tours++ < 50){
+          prog = false;
+          for(let i = 0; i < seq.length - 1; i++) for(let k = i + 1; k < seq.length; k++){
+            const t = seq.slice(0, i).concat(seq.slice(i, k + 1).reverse(), seq.slice(k + 1));
+            const c = coutJ(t); if(c < best - 1e-6){ seq = t; best = c; prog = true; }
+          }
+        }
+        jr.idx = seq;
+        let t = 0, d = 0, a = jr.src;
+        seq.forEach(x => { t += M.T[a][x] + visite; d += M.D[a][x]; a = x; });
+        if(restart){ t += M.T[a][0]; d += M.D[a][0]; }
+        jr.t = t; jr.d = d;
+      });
+      const trajet = jourList.reduce((s, x) => s + x.t, 0) - (ch.length - 1) * visite;
+      const dist = jourList.reduce((s, x) => s + x.d, 0);
+      return {jours: jourList.length, dist, trajet, detail: jourList};
+    }
+
+    async function calculerPlanning(){
+      const sect = P('ptype').value, type = '*', visite = (+P('pvisite').value || 0) * 60, maxJour = (+P('pheures').value || 6) * 3600;
+      const restart = P('prestart').checked, depMode = P('pdep').value;
+      let fixe = null;
+      if(depMode === 'gps'){
+        P('pmsg').textContent = 'Recherche de votre position…';
+        try{ fixe = await maPosition(); fixe.nom = 'Ma position'; }
+        catch(e){ P('pmsg').textContent = (e && e.message ? e.message : 'Position introuvable') + ' — ou choisissez un autre point de départ.'; return; }
+        P('pmsg').textContent = 'Position trouvée : ' + fixe.lat.toFixed(5) + ', ' + fixe.lng.toFixed(5);
+      }else if(depMode === 'fixe'){
+        const m = P('pfixe').value.match(/(-?\d+(?:\.\d+)?)\s*[,; ]\s*(-?\d+(?:\.\d+)?)/);
+        if(!m){ P('pmsg').textContent = 'Coordonnées du point fixe invalides (format : lat, lng).'; return; }
+        fixe = {lat: +m[1], lng: +m[2], nom: 'Siège', key: null};
+      }
+      if(sect !== secteurActif()){ const bt = document.querySelector('#sectorbar button[data-s="' + sect + '"]'); if(bt) bt.click(); P('plan').classList.add('show'); }
+      const tous = PTS.filter(p => p.lat != null && p.secteur === sect);
+      const vus = P('pvis').checked ? etabsVisites(tous) : new Set();
+      const pts = tous.filter(p => !vus.has(p.key));
+      const nbVus = {};
+      tous.filter(p => vus.has(p.key)).forEach(p => { const k = p.district + '|' + (annexeDe(p) || 'Hors annexe'); nbVus[k] = (nbVus[k] || 0) + 1; });
+      const groupes = {};
+      pts.forEach(p => { const a = annexeDe(p) || 'Hors annexe'; (groupes[p.district + '|' + a] = groupes[p.district + '|' + a] || []).push(p); });
+      const liste = [];
+      GEO.districts.forEach((d, di) => {
+        GEO.annexes.filter(a => a.d === di).sort((a, b) => a.num - b.num).forEach(a => liste.push({district: d.name, annexe: a.name, c: a.c}));
+        if(groupes[d.name + '|Hors annexe'] || nbVus[d.name + '|Hors annexe']) liste.push({district: d.name, annexe: 'Hors annexe', c: null});
+      });
+      P('pgo').disabled = true; P('ppdf').disabled = true;
+      lignes = [];
+      let viaRoute = true;
+      for(let i = 0; i < liste.length; i++){
+        const L0 = liste[i], etabs = groupes[L0.district + '|' + L0.annexe] || [];
+        P('pmsg').textContent = `Calcul ${i + 1}/${liste.length} : ${L0.district} — ${L0.annexe} (${etabs.length} établissements)…`;
+        const ligne = {district: L0.district, annexe: L0.annexe, vus: nbVus[L0.district + '|' + L0.annexe] || 0, n: etabs.length, dist: 0, trajet: 0, visites: etabs.length * visite, jours: 0, parJour: ''};
+        if(etabs.length){
+          let dep = fixe;
+          if(!dep){
+            const c = L0.c ? {lat: L0.c[1], lng: L0.c[0]}
+              : {lat: etabs.reduce((s, p) => s + p.lat, 0) / etabs.length, lng: etabs.reduce((s, p) => s + p.lng, 0) / etabs.length};
+            dep = Object.assign(c, {nom: 'Centre', key: null});
+          }
+          const lesPts = [dep].concat(etabs.slice(0, 99));
+          const M = await matrice(lesPts);
+          if(M.source !== 'route') viaRoute = false;
+          const ch = optimiser(M.D, etabs.length);
+          const r = journees(M, ch, visite, maxJour, restart);
+          Object.assign(ligne, {dist: r.dist, trajet: r.trajet, jours: r.jours, parJour: r.detail.map(x => x.n).join(' + '),
+            itin: r.detail.map(x => ({orig: lesPts[x.src], stops: x.idx.map(i => lesPts[i]), fin: restart ? lesPts[0] : null, d: x.d, t: x.t}))});
+          await pause(700);                                   // ménage le serveur OSRM public
+        }
+        ligne.total = ligne.trajet + ligne.visites;
+        ligne.jeq = ligne.total / maxJour;
+        ligne.max = maxJour;
+        lignes.push(ligne);
+        afficher();
+      }
+      P('pmsg').textContent = (viaRoute ? 'Distances par la route (OSRM).' : 'Service routier partiellement indisponible : certaines distances à vol d\'oiseau ×1,3.')
+        + ` ${sect === 'Sport' ? 'Établissements sportifs' : 'Établissements sanitaires'} ·${vus.size ? ' ' + vus.size + ' déjà visité(s) exclus ·' : ''}${P('pvis').checked && VISITES.length > vus.size ? ' ' + (VISITES.length - vus.size) + ' visite(s) sans établissement correspondant sur la carte ·' : ''} visite ${P('pvisite').value} min · ${P('pheures').value} h/jour.`;
+      P('pgo').disabled = false; P('ppdf').disabled = false;
+      lastPrm = {type, secteur: sect, visite: +P('pvisite').value || 0, heures: +P('pheures').value || 6, restart, route: viaRoute,
+        vusTotal: vus.size, nonRetrouves: P('pvis').checked ? VISITES.length - vus.size : 0,
+        depart: depMode === 'gps' ? 'Position de l\'agent (localisation GPS : ' + fixe.lat.toFixed(5) + ', ' + fixe.lng.toFixed(5) + ')' : fixe ? 'Point fixe (' + P('pfixe').value.trim() + ')' : 'Centre de chaque annexe'};
+    }
+
+    /* Sous-total district : les jours NE sont PAS la somme des jours arrondis de chaque annexe
+       (une journée entamée dans une annexe peut se terminer dans la suivante) :
+       jours district = arrondi supérieur (temps total du district / heures par jour). */
+    function somme(ls, niveau){
+      const s = ls.reduce((s, l) => ({vus: s.vus + (l.vus || 0), n: s.n + l.n, dist: s.dist + l.dist, trajet: s.trajet + l.trajet, visites: s.visites + l.visites, total: s.total + l.total, jeq: s.jeq + l.jeq, jours: s.jours + l.jours}),
+        {vus: 0, n: 0, dist: 0, trajet: 0, visites: 0, total: 0, jeq: 0, jours: 0});
+      if(niveau === 'district') s.jours = Math.ceil(s.jeq - 1e-9);
+      s.parJour = '';
+      return s;
+    }
+    const totalGeneral = () => { const s = somme(lignes);
+      s.jours = GEO.districts.reduce((t, d) => { const ls = lignes.filter(l => l.district === d.name); return t + (ls.length ? somme(ls, 'district').jours : 0); }, 0);
+      return s; };
+    const jf = x => x.toFixed(2).replace('.', ',');
+    /* Liens Google Maps d'une journée : départ → établissements dans l'ordre optimisé → retour au départ.
+       Google Maps limite à 9 étapes + 1 destination : au-delà, la journée est découpée en parties. */
+    const gc = p => p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+    function liensGoogle(j){
+      const seq = [j.orig].concat(j.stops, j.fin ? [j.fin] : []), res = [];
+      for(let a = 0; a < seq.length - 1; a += 10){
+        const b = Math.min(a + 10, seq.length - 1), w = seq.slice(a + 1, b);
+        res.push('https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + gc(seq[a]) + '&destination=' + gc(seq[b])
+          + (w.length ? '&waypoints=' + w.map(gc).join('%7C') : ''));
+      }
+      return res;
+    }
+    function liensJours(l){
+      if(!l.itin || !l.itin.length) return '';
+      return l.itin.map((j, k) => liensGoogle(j).map((u, m, arr) =>
+        `<a href="${u}" target="_blank" title="${esc(j.stops.map(p => p.id).join(' → '))}">🧭 T${k + 1}${arr.length > 1 ? String.fromCharCode(97 + m) : ''}</a>`).join('')).join('');
+    }
+    const cells = (l, tot) => `<td>${l.vus || 0}</td><td>${l.n}</td><td>${kmf(l.dist)}</td><td>${hm(l.trajet)}</td><td>${hm(l.visites)}</td><td>${hm(l.total)}</td><td>${tot ? '<b>' + l.jours + '</b>' : ''}</td><td class="pgm">${!tot && l.itin && l.itin.length ? `<button type="button" class="pmap" data-k="${lignes.indexOf(l)}">🗺️ Carte</button>` : ""}${tot ? '' : liensJours(l)}</td>`;
+
+    function afficher(){
+      let h = '<table><thead><tr><th>District</th><th>Annexe</th><th>Déjà visités</th><th>Restant à visiter</th><th>Distance (km)</th><th>Temps de trajet</th><th>Temps de visite</th><th>Temps total</th><th>Nombre de jours</th><th>Itinéraire</th></tr></thead><tbody>';
+      GEO.districts.forEach(d => {
+        const ls = lignes.filter(l => l.district === d.name); if(!ls.length) return;
+        ls.forEach((l, k) => { h += '<tr>' + (k === 0 ? `<td class="dn" rowspan="${ls.length + 1}">${esc(d.name)}</td>` : '') + `<td>${esc(l.annexe)}</td>` + cells(l) + '</tr>'; });
+        h += '<tr class="sub"><td>Total district</td>' + cells(somme(ls, 'district'), true) + '</tr>';
+      });
+      h += '<tr class="tot"><td colspan="2">TOTAL GÉNÉRAL</td>' + cells(totalGeneral(), true) + '</tr></tbody></table>';
+      P('pres').innerHTML = h;
+    }
+
+    /* Affichage sur la carte de l'itinéraire optimisé d'une annexe (une couleur par journée) */
+    const COULJ = ['#e6194b','#4363d8','#3cb44b','#f58231','#911eb4','#008080','#9a6324','#f032e6','#000075','#808000'];
+    function voirAnnexe(k){
+      const l = lignes[k]; if(!l || !l.itin) return;
+      P('plan').classList.remove('show');
+      couche.clearLayers();
+      const tous = [];
+      const icone = (txt, c) => L.divIcon({className: '', html: `<div class="itnum" style="background:${c}">${txt}</div>`, iconSize: [26, 26], iconAnchor: [13, 13]});
+      l.itin.forEach((j, d) => {
+        const c = COULJ[d % COULJ.length];
+        const seq = [j.orig].concat(j.stops, j.fin ? [j.fin] : []);
+        const ll = seq.map(p => [p.lat, p.lng]); tous.push(...ll);
+        const ligne = L.polyline(ll, {color: c, weight: 4, opacity: .8, dashArray: '8 7'}).addTo(couche);
+        j.stops.forEach((p, i) => L.marker([p.lat, p.lng], {icon: icone(i + 1, c), zIndexOffset: 900})
+          .bindTooltip(`Tournée ${d + 1} · étape ${i + 1} : ${p.id} — ${p.nom}`).on('click', () => openPoint(p)).addTo(couche));
+        // Tracé routier réel de la journée (si OSRM répond)
+        avecDelai(`${OSRM}/route/v1/driving/${seq.map(p => p.lng.toFixed(6) + ',' + p.lat.toFixed(6)).join(';')}?overview=full&geometries=geojson`, 15000)
+          .then(r => { if(r.code === 'Ok' && r.routes && r.routes[0]){ ligne.setLatLngs(r.routes[0].geometry.coordinates.map(x => [x[1], x[0]])); ligne.setStyle({dashArray: null}); } })
+          .catch(() => {});
+      });
+      const o = l.itin[0].orig;
+      if(!o.key) L.marker([o.lat, o.lng], {icon: icone(o.nom === 'Ma position' ? '📍' : 'D', '#1c2430'), zIndexOffset: 1000}).bindTooltip(o.nom === 'Ma position' ? 'Départ : ma position' : 'Point de départ').addTo(couche);
+      map.fitBounds(L.latLngBounds(tous).pad(0.15));
+      const lg = P('planleg');
+      lg.innerHTML = `<div class="lh"><b>${esc(l.district)} — ${esc(l.annexe)} · ${l.n} établissements · ${kmf(l.dist)} km · ${l.jours} tournée(s)</b><button type="button" id="plback">↩ Planning</button><button type="button" id="plclose" style="background:#eef1f4;color:#1c2430">✕</button></div>`
+        + `<div class="ld">${l.itin.map((j, d) => `<span><i style="background:${COULJ[d % COULJ.length]}"></i>Tournée ${d + 1} : ${j.stops.length} étab. ${liensGoogle(j).map((u, m, a) => `<a href="${u}" target="_blank">🧭${a.length > 1 ? String.fromCharCode(97 + m) : ''}</a>`).join(' ')}</span>`).join('')}</div>`;
+      lg.classList.add('show');
+      P('plback').onclick = () => { lg.classList.remove('show'); P('plan').classList.add('show'); };
+      P('plclose').onclick = () => { lg.classList.remove('show'); couche.clearLayers(); };
+    }
+    P('pres').addEventListener('click', ev => { const b = ev.target.closest('.pmap'); if(b) voirAnnexe(+b.dataset.k); });
+
+    P('planbtn').onclick = () => { remplirTypes(); P('plan').classList.add('show'); };
+    P('pclose').onclick = () => P('plan').classList.remove('show');
+    P('pdep').onchange = () => P('pfixe').style.display = P('pdep').value === 'fixe' ? '' : 'none';
+    P('pgo').onclick = () => calculerPlanning().catch(e => { P('pmsg').textContent = 'Erreur : ' + (e && e.message || e); P('pgo').disabled = false; });
+    /* ==================== EXPORT PDF — version administrative ==================== */
+    const RX_AR = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    function construirePDF(jsPDF, lignes, prm, ordreD, fontB64){
+      const doc = new jsPDF({orientation: 'landscape', unit: 'mm', format: 'a4'});
+      let AR = false;
+      if(fontB64){ try{ doc.addFileToVFS('Amiri.ttf', fontB64); doc.addFont('Amiri.ttf', 'Amiri', 'normal'); AR = true; }catch(e){} }
+      const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+      const VERT = [10, 92, 74], NOIR = [28, 36, 48], GRIS = [90, 100, 115], BLEU = [26, 115, 232];
+      const hmP = s => { const mn = Math.round(s / 60); return Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0'); };
+      const kmP = m => (m / 1000).toFixed(1).replace('.', ',');
+      const auj = new Date(), dStr = String(auj.getDate()).padStart(2, '0') + '/' + String(auj.getMonth() + 1).padStart(2, '0') + '/' + auj.getFullYear();
+      const sum = ls => ls.reduce((s, l) => ({vus: s.vus + (l.vus || 0), n: s.n + l.n, dist: s.dist + l.dist, total: s.total + l.total, jeq: s.jeq + l.jeq}), {vus: 0, n: 0, dist: 0, total: 0, jeq: 0});
+      const libSect = prm.secteur === 'Sport' ? 'établissements publics sportifs' : 'établissements publics sanitaires';
+      const nomEtab = p => { const n = String(p.nom || '').replace(/[—–]/g, '-');
+        return RX_AR.test(n) && !AR ? p.nature : n; };
+
+      /* ----- En-tête ----- */
+      const entete = () => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...NOIR);
+        ['ROYAUME DU MAROC', "MINISTÈRE DE L'INTÉRIEUR", "WILAYA DE LA RÉGION DE L'ORIENTAL", "PRÉFECTURE D'OUJDA-ANGAD"]
+          .forEach((t, i) => doc.text(t, 14, 14 + i * 4.6));
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        doc.text('Cabinet de Monsieur le Wali', 14, 33.2); doc.text('Cellule de suivi des projets', 14, 37.6);
+        doc.text('Oujda, le ' + dStr, W - 14, 14, {align: 'right'});
+        doc.setDrawColor(...VERT); doc.setLineWidth(0.6); doc.line(14, 41, W - 14, 41);
+      };
+      entete();
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...VERT);
+      doc.text('PLANNING DES TOURNÉES DE VISITE', W / 2, 50, {align: 'center'});
+      doc.setFontSize(11); doc.setTextColor(...NOIR);
+      doc.text('Visite des ' + libSect + ' par district et par annexe administrative', W / 2, 56.5, {align: 'center'});
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...GRIS);
+      doc.text('Base de calcul : ' + prm.visite + ' min de visite par établissement - journée de ' + String(prm.heures).replace('.', ',')
+        + ' h - départ : ' + prm.depart + ' - itinéraire optimisé' + (prm.route ? ' (distances routières)' : ' (distances estimées)') + (prm.vusTotal ? ' - ' + prm.vusTotal + ' établissement(s) déjà visité(s) exclu(s).' : '.'), W / 2, 62, {align: 'center'});
+
+      /* ----- 1. Récapitulatif ----- */
+      let y = 71;
+      const titre = t => { doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(...VERT); doc.text(t, 14, y); y += 2.5; };
+      titre('1. Récapitulatif par district');
+      const rec = []; let totJ = 0;
+      ordreD.forEach(dn => {
+        const ls = lignes.filter(l => l.district === dn); if(!ls.length) return;
+        const s = sum(ls), j = Math.ceil(s.jeq - 1e-9); totJ += j;
+        rec.push([dn, ls.filter(l => l.n).length, s.vus, s.n, kmP(s.dist), hmP(s.total), j]);
+      });
+      const g = sum(lignes);
+      rec.push(['TOTAL', lignes.filter(l => l.n).length, g.vus, g.n, kmP(g.dist), hmP(g.total), totJ]);
+      doc.autoTable({startY: y, theme: 'grid', margin: {left: 14, right: 14},
+        head: [['District', 'Annexes concernées', 'Déjà visités', 'Restant à visiter', 'Distance (km)', 'Temps consacré', 'Nombre de jours']],
+        body: rec,
+        headStyles: {fillColor: VERT, textColor: 255, fontStyle: 'bold', halign: 'center'},
+        styles: {fontSize: 9.5, cellPadding: 2, halign: 'center', textColor: NOIR, lineColor: [200, 206, 214], lineWidth: 0.2},
+        columnStyles: {0: {halign: 'left', fontStyle: 'bold', cellWidth: 70}},
+        didParseCell: d => { if(d.section === 'body' && d.row.index === rec.length - 1){ d.cell.styles.fillColor = NOIR; d.cell.styles.textColor = 255; d.cell.styles.fontStyle = 'bold'; } }});
+
+      /* ----- 2. Détail par district ----- */
+      let num = 1;
+      ordreD.forEach(dn => {
+        const ls = lignes.filter(l => l.district === dn); if(!ls.length) return;
+        const s = sum(ls), j = Math.ceil(s.jeq - 1e-9);
+        doc.addPage(); entete(); y = 50;
+        doc.setFillColor(...VERT); doc.roundedRect(14, y - 6, W - 28, 10, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(255);
+        doc.text('2.' + (num++) + '  DISTRICT ' + dn, 18, y + 0.5);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+        doc.text((s.vus ? s.vus + ' déjà visités  |  ' : '') + s.n + ' à visiter  |  ' + kmP(s.dist) + ' km  |  Temps consacré : ' + hmP(s.total) + '  |  ' + j + ' jour' + (j > 1 ? 's' : ''), W - 18, y + 0.5, {align: 'right'});
+        y += 8;
+        const body = [], liens = [];
+        ls.forEach(l => {
+          const tours = (l.itin || []).flatMap((t, k) => (t.urls || []).map((u, m, a) => ({txt: 'Tournée ' + (k + 1) + (a.length > 1 ? String.fromCharCode(97 + m) : ''), u})));
+          liens.push(tours);
+          body.push([l.annexe, l.vus || 0, l.n, hmP(l.total), tours.map(t => t.txt).join('\n') || '-']);
+        });
+        body.push([{content: 'Total district', styles: {fontStyle: 'bold', fillColor: [231, 243, 239]}}, {content: String(s.vus), styles: {fontStyle: 'bold', fillColor: [231, 243, 239]}}, {content: String(s.n), styles: {fontStyle: 'bold', fillColor: [231, 243, 239]}},
+          {content: hmP(s.total), styles: {fontStyle: 'bold', fillColor: [231, 243, 239]}}, {content: '', styles: {fillColor: [231, 243, 239]}}]);
+        doc.autoTable({startY: y, theme: 'grid', margin: {left: 14, right: 14, top: 18, bottom: 16},
+          head: [['Annexe', 'Déjà visités', 'Restant à visiter', 'Temps consacré', 'Lien du trajet']],
+          body,
+          headStyles: {fillColor: [232, 237, 242], textColor: NOIR, fontStyle: 'bold', halign: 'center', valign: 'middle'},
+          styles: {fontSize: 8.6, cellPadding: 1.8, valign: 'middle', halign: 'center', textColor: NOIR, lineColor: [200, 206, 214], lineWidth: 0.2},
+          columnStyles: {0: {fontStyle: 'bold'}, 3: {fontStyle: 'bold'}, 4: {textColor: BLEU, fontStyle: 'bold'}},
+          didDrawCell: d => {
+            if(d.section !== 'body' || d.column.index !== 4) return;
+            const t = liens[d.row.index]; if(!t || !t.length) return;
+            const lh = d.cell.styles.fontSize * doc.getLineHeightFactor() / doc.internal.scaleFactor;
+            const y0 = d.cell.y + (d.cell.height - lh * t.length) / 2;
+            t.forEach((x, i) => doc.link(d.cell.x, y0 + i * lh, d.cell.width, lh, {url: x.u}));
+          }});
+      });
+
+      /* ----- Signature + pied de page ----- */
+      y = doc.lastAutoTable.finalY + 14; if(y > H - 30){ doc.addPage(); entete(); y = 55; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...NOIR);
+      doc.text('Le Chef de la Cellule de suivi des projets', W - 14, y, {align: 'right'});
+      const n = doc.getNumberOfPages();
+      for(let i = 1; i <= n; i++){
+        doc.setPage(i); doc.setDrawColor(...VERT); doc.setLineWidth(0.3); doc.line(14, H - 11, W - 14, H - 11);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GRIS);
+        doc.text("Wilaya de la Région de l'Oriental - Préfecture d'Oujda-Angad - Cellule de suivi des projets   |   Cliquer sur « Tournée » pour ouvrir le trajet dans Google Maps", 14, H - 7);
+        doc.text('Page ' + i + ' / ' + n, W - 14, H - 7, {align: 'right'});
+      }
+      return doc;
+    }
+
+    /* Police arabe (noms d'établissements en arabe) — chargée une seule fois */
+    let policeAR;
+    function chargerPolice(){
+      if(policeAR !== undefined) return Promise.resolve(policeAR);
+      const srcs = ['https://raw.githubusercontent.com/google/fonts/main/ofl/amiri/Amiri-Regular.ttf',
+                    'https://cdn.jsdelivr.net/gh/aliftype/amiri@1.000/fonts/Amiri-Regular.ttf'];
+      const essai = i => i >= srcs.length ? Promise.resolve(null) : fetch(srcs[i]).then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
+        .then(buf => { const u = new Uint8Array(buf); let bin = ''; for(let k = 0; k < u.length; k += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000)); return btoa(bin); })
+        .catch(() => essai(i + 1));
+      return essai(0).then(b => (policeAR = b));
+    }
+    P('ppdf').onclick = () => {
+      if(!lignes || !lastPrm) return;
+      const lib = window.jspdf;
+      if(!lib || !lib.jsPDF || !lib.jsPDF.API.autoTable){ P('pmsg').textContent = 'Module PDF non chargé : vérifiez la connexion internet puis rechargez la page.'; return; }
+      P('ppdf').disabled = true; P('pmsg').textContent = 'Préparation du PDF…';
+      lignes.forEach(l => (l.itin || []).forEach(j => j.urls = liensGoogle(j)));
+      chargerPolice().then(f => {
+        const doc = construirePDF(lib.jsPDF, lignes, lastPrm, GEO.districts.map(d => d.name), f);
+        const t = new Date(), ds = t.getFullYear() + String(t.getMonth() + 1).padStart(2, '0') + String(t.getDate()).padStart(2, '0');
+        doc.save('Planning_tournees_' + (lastPrm.secteur === 'Sport' ? 'etablissements_sportifs' : 'etablissements_sanitaires') + '_' + ds + '.pdf');
+        P('pmsg').textContent = 'PDF généré.' + (f ? '' : ' (Police arabe indisponible : les noms en arabe sont remplacés par le type d\'établissement.)');
+      }).catch(e => P('pmsg').textContent = 'Erreur PDF : ' + (e && e.message || e))
+        .finally(() => P('ppdf').disabled = false);
+    };
+  })();
 })();
 
 </script></body></html>
