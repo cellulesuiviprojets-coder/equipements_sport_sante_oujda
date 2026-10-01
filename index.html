@@ -2767,6 +2767,12 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
 #plan .phead button{position:absolute;right:12px;top:12px;border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;width:30px;height:30px;cursor:pointer}
 #plan .pbody{overflow:auto;padding:14px 18px 18px}
 #plan .pparams{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+#plan .pparams .pdists{grid-column:1/-1}
+#plan #pdist{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+#plan #pdist label{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:6px 12px;border:1.5px solid #D5DBE3;border-radius:999px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:700;color:#1c2430;text-transform:none;letter-spacing:0}
+#plan #pdist label.off{background:#F4F6F8;color:#9AA3AF;border-style:dashed;text-decoration:line-through}
+#plan #pdist label i{width:10px;height:10px;border-radius:50%;flex:none}
+#plan #pdist input{width:17px;height:17px;margin:0;accent-color:#0a5c4a}
 #plan .pparams label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#6b7686;display:block}
 #plan .pparams select,#plan .pparams input[type=number],#plan .pparams input[type=text]{width:100%;box-sizing:border-box;border:1px solid #dde2e8;border-radius:9px;padding:8px 9px;font:inherit;font-size:13px;margin-top:5px;background:#fff}
 #plan .pchk{font-size:12.5px;display:flex;align-items:center;gap:6px;margin-top:22px;text-transform:none;letter-spacing:0;color:#1c2430}
@@ -2881,6 +2887,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
 #planleg .vsw button b{display:block;font-size:12.5px}
 #planleg .vsw button span{display:block;font-size:11.5px;color:#6b7686;margin-top:2px}
 #planleg .vsw button.on{border-color:#1a73e8;background:#eef4fe}
+#planleg .plpdf{display:block;width:100%;min-height:42px;margin:0 0 10px;border:1.5px solid #0a5c4a;border-radius:10px;background:#E7F3EF;color:#0a5c4a;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer}
 #planleg .vnote{font-size:11px;color:#6b7686;margin-bottom:10px}
 #planleg .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
 #planleg .tiles div{background:#f4f6f8;border-radius:9px;padding:7px 4px;text-align:center}
@@ -2997,8 +3004,9 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
      <input id="pfixe" type="text" placeholder="lat, lng  ex : 34.6814, -1.9086" style="display:none">
      <div id="ppos"></div></div>
    <div><label>Ordre des tournées</label><select id="pordre"></select></div>
+   <div class="pdists"><label>Districts à visiter</label><div id="pdist"></div></div>
   </div>
-  <div class="pact"><button type="button" id="pgo" class="pri">Calculer le planning</button><button type="button" id="ppdf" disabled>📄 Exporter en PDF</button></div>
+  <div class="pact"><button type="button" id="pgo" class="pri">Calculer le planning</button><button type="button" id="ppdf" disabled>📄 Exporter en PDF</button><button type="button" id="ppdfl" disabled title="Une page par journée : terrains dans l'ordre du trajet, avec le lien GPS de chacun">📍 PDF liste des terrains + GPS</button></div>
   <div id="pmsg"></div>
   <div id="pprog"><i></i></div>
   <div id="pres"></div>
@@ -3020,13 +3028,15 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
   let lignes = null, lastPrm = null;
 
   /* ---------- Terrains à visiter : tous (aucun n'est encore visité), sauf ceux retirés en mode édition ---------- */
+  // Districts exclus du planning (déjà visités) : Sidi Yahya par défaut
+  const exclus = new Set(['SIDI YAHYA']);
   function terrains(cat){
     return allSportPoints().filter(p => p.lat != null && p.lng != null && terrainStatus(p) !== 'supprime' && (cat === '*' ? activeSportCats.has(p.category) : p.category === cat))
       .map(p => {
         let d = p.district, a = p.annexe;
         if(!d || !a){ const g = findGeoForPoint(p.lat, p.lng); if(g){ d = d || g.district; a = a || g.annexe; } }
         return {nom: p.name, cat: p.category, lat: p.lat, lng: p.lng, district: d || HORS, annexe: a || HORS, key: terrainId(p)};
-      });
+      }).filter(p => !exclus.has(p.district));
   }
   function centreAnnexe(a){
     const pts = []; (function f(x){ if(typeof x[0] === 'number') pts.push(x); else x.forEach(f); })(a.latlngs);
@@ -3184,7 +3194,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
       if(groupes[d.name + '|' + HORS]) liste.push({district: d.name, annexe: HORS, c: null});
     });
     if(groupes[HORS + '|' + HORS]) liste.push({district: HORS, annexe: HORS, c: null});
-    P('pgo').disabled = true; P('ppdf').disabled = true;
+    P('pgo').disabled = true; P('ppdf').disabled = true; P('ppdfl').disabled = true;
     lignes = []; let viaRoute = true;
     for(let i = 0; i < liste.length; i++){
       const L0 = liste[i], etabs = groupes[L0.district + '|' + L0.annexe] || [];
@@ -3326,7 +3336,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
     const pts = terrains(cat);
     lignes = null; G = null; P('pres').innerHTML = '';
     if(!pts.length){ P('pmsg').textContent = 'Aucun terrain à visiter avec ces catégories.'; return; }
-    P('pgo').disabled = true; P('ppdf').disabled = true;
+    P('pgo').disabled = true; P('ppdf').disabled = true; P('ppdfl').disabled = true;
     P('pmsg').textContent = `Calcul des distances par la route entre le départ et ${pts.length} terrains…`;
     prog('ind');
     const lesPts = [dep].concat(pts.slice(0, 99));
@@ -3485,7 +3495,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
     afficherGlobal();
     P('pmsg').textContent = (M.fige ? 'Distances par la route enregistrées le ' + ROUTES.date + ' : planning toujours identique, même sans internet.' : M.source === 'route' ? 'Distances par la route (OSRM).' : 'Service routier indisponible : distances à vol d\'oiseau ×1,3.')
       + ` ${G.n} terrain(s) · visite ${P('pvisite').value} min · ${P('pheures').value} h/jour.`;
-    P('pgo').disabled = false; P('ppdf').disabled = false;
+    P('pgo').disabled = false; P('ppdf').disabled = false; P('ppdfl').disabled = false;
     lastPrm = {cat, visite: +P('pvisite').value || 0, heures: +P('pheures').value || 5, restart, route: M.source === 'route', global: true,
       depart: depMode === 'wilaya' ? 'Wilaya de la Région de l\'Oriental (' + dep.lat.toFixed(6) + ', ' + dep.lng.toFixed(6) + ')'
         : depMode === 'gps' ? 'position de l\'agent (GPS : ' + dep.lat.toFixed(6) + ', ' + dep.lng.toFixed(6) + (dep.acc ? ', précision ± ' + Math.round(dep.acc) + ' m' : '') + ')'
@@ -3712,6 +3722,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
     const vis = l.visiteS || 0, visTot = V.itin.reduce((a, x) => a + x.stops.length, 0) * vis;
     let h = `<div class="ph"><b>${escP(l.titre ? l.titre() : l.annexe + ' — ' + l.district)}</b><small>${escP(l.sous ? l.sous(V) : l.n + ' terrain(s) · départ : ' + (l.depNom || V.itin[0].orig.nom))}</small>`
       + `<div class="pbtns"><button type="button" id="plfold" title="Replier / déplier le panneau">▾</button><button type="button" id="plback">↩ Planning</button><button type="button" id="plclose">✕</button></div></div><div class="pb">`;
+    if(l.global) h += `<button type="button" class="plpdf" id="plpdf">📍 PDF : liste des terrains + liens GPS</button>`;
     h += `<div class="tiles"><div><b>${kmx(V.dist)}</b><span>Distance</span></div><div><b>${mnf(V.trajet)}</b><span>Route</span></div>`
       + `<div><b>${mnf(visTot)}</b><span>Visites</span></div><div><b>${mnf(V.trajet + visTot)}</b><span>Durée totale</span></div></div>`;
     V.itin.forEach((j, d) => {
@@ -3743,6 +3754,7 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
       const m = marqueurs[el.dataset.d + '-' + el.dataset.i]; if(!m) return;
       map.setView(m.getLatLng(), Math.max(map.getZoom(), 16)); m.openPopup();
     });
+    if(P('plpdf')) P('plpdf').onclick = () => pdfListe(V.itin.map((j, k) => ({j, n: k + 1 + (l.offset || 0)})), P('plpdf'));
     P('plback').onclick = () => { fermerVue(); P('plan').classList.add('show'); };
     P('plclose').onclick = fermerVue;
     // Replier / déplier : bouton ▾, ou toucher le titre du panneau
@@ -3762,20 +3774,37 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
     const nOn = existingCategories().filter(c => activeSportCats.has(c)).length, nEx = existingCategories().length;
     sel.innerHTML = '<option value="*">' + (nOn < nEx ? 'Catégories cochées (' + nOn + '/' + nEx + ')' : 'Toutes les catégories') + '</option>' + existingCategories().map(c => `<option value="${escP(c)}">${escP(c)}</option>`).join('');
     sel.value = v;
-    P('psub').textContent = terrains('*').length + ' terrains sportifs retenus — aucun encore visité';
+    P('psub').textContent = terrains('*').length + ' terrains sportifs retenus' + (exclus.size ? ' — hors ' + [...exclus].join(', ') + ' (déjà visité)' : ' — aucun encore visité');
   }
   // Si les catégories changent, le planning affiché n'est plus valable
   window.planningCategoriesChanged = () => {
-    if (lignes || G){ lignes = null; G = null; lastPrm = null; P('pres').innerHTML = ''; P('ppdf').disabled = true;
+    if (lignes || G){ lignes = null; G = null; lastPrm = null; P('pres').innerHTML = ''; P('ppdf').disabled = true; P('ppdfl').disabled = true;
       P('pmsg').textContent = 'Les catégories ont changé : cliquez sur « Calculer le planning » pour mettre à jour.'; }
     fermerVue();
   };
   (function(){
     const sel = P('pordre');
-    sel.innerHTML = DATA.districts.map(d => `<option value="${escP(d.name)}"${d.name === 'SIDI YAHYA' ? ' selected' : ''}>Par district — commencer par ${escP(d.name)}</option>`).join('')
-      + '<option value="">Toute la ville (sans ordre de district)</option>';
-    sel.onchange = () => { if(G){ G = null; lastPrm = null; P('pres').innerHTML = ''; P('ppdf').disabled = true;
-      P('pmsg').textContent = 'Ordre modifié : cliquez sur « Calculer le planning » pour mettre à jour.'; } };
+    const invalider = txt => { if(G || lignes){ G = null; lignes = null; lastPrm = null; P('pres').innerHTML = ''; P('ppdf').disabled = true; P('ppdfl').disabled = true;
+      P('pmsg').textContent = txt + ' : cliquez sur « Calculer le planning » pour mettre à jour.'; } };
+    const remplirOrdre = () => {
+      const v = sel.options.length ? sel.value : 'OUJDA SIDI ZIANE', ok = DATA.districts.filter(d => !exclus.has(d.name));
+      sel.innerHTML = ok.map(d => `<option value="${escP(d.name)}">Par district — commencer par ${escP(d.name)}</option>`).join('')
+        + '<option value="">Toute la ville (sans ordre de district)</option>';
+      sel.value = ok.some(d => d.name === v) || v === '' ? v : (ok.some(d => d.name === 'OUJDA SIDI ZIANE') ? 'OUJDA SIDI ZIANE' : (ok[0] ? ok[0].name : ''));
+    };
+    const remplirDistricts = () => {
+      P('pdist').innerHTML = DATA.districts.map(d => { const on = !exclus.has(d.name);
+        return `<label class="${on ? '' : 'off'}" title="${on ? 'Inclus dans le planning' : 'Exclu du planning (déjà visité)'}"><input type="checkbox" data-d="${escP(d.name)}"${on ? ' checked' : ''}><i style="background:${d.color}"></i>${escP(d.name)}</label>`; }).join('');
+    };
+    P('pdist').addEventListener('change', ev => {
+      const c = ev.target.closest('input[data-d]'); if(!c) return;
+      if(c.checked) exclus.delete(c.dataset.d); else exclus.add(c.dataset.d);
+      if(exclus.size >= DATA.districts.length){ exclus.delete(c.dataset.d); c.checked = true; }   // au moins un district
+      remplirDistricts(); remplirOrdre(); remplirTypes();
+      invalider('Districts modifiés');
+    });
+    sel.onchange = () => invalider('Ordre modifié');
+    remplirDistricts(); remplirOrdre();
   })();
   P('planbtn').onclick = () => { remplirTypes(); P('plan').classList.add('show'); afficherPos();
     if(P('pdep').value === 'gps' && (!posActuelle || posActuelle.err || Date.now() - posActuelle.time > 120000)) localiser().catch(() => {}); else afficherPos(); };
@@ -3951,6 +3980,105 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
     }
     return doc;
   }
+  /* ==================== PDF « Liste des terrains + liens GPS » (pour la sortie, sur téléphone) ====================
+     Une page par journée : terrains dans l'ordre du trajet, heure d'arrivée, lien GPS cliquable de chaque terrain.
+     Les noms en arabe utilisent la police Amiri (chargée au moment de l'export). */
+  let policeArabe = null;
+  function chargerArabe(){
+    return policeArabe || (policeArabe = fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/amiri/Amiri-Regular.ttf')
+      .then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(b => { const u = new Uint8Array(b); let x = ''; for(let i = 0; i < u.length; i += 8192) x += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(x); })
+      .catch(() => { policeArabe = null; return null; }));
+  }
+  const AR = /[\u0600-\u06FF]/;
+  function construirePDFListe(jsPDF, jours, b64){
+    const doc = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
+    const arabe = !!b64; if(arabe){ doc.addFileToVFS('Amiri.ttf', b64); doc.addFont('Amiri.ttf', 'Amiri', 'normal'); }
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    const VERT = [10, 92, 74], NOIR = [28, 36, 48], GRIS = [90, 100, 115], BLEU = [26, 115, 232], JAUNE = [255, 248, 220], OR = [138, 109, 0];
+    const auj = new Date(), dStr = String(auj.getDate()).padStart(2, '0') + '/' + String(auj.getMonth() + 1).padStart(2, '0') + '/' + auj.getFullYear();
+    const txt = x => String(x == null ? '' : x).replace(/[—–]/g, '-').replace(/→/g, '>').replace(/[➡➕✓]/g, '');
+    const vis = G.visiteS;
+    jours.forEach(({j, n}, k) => {
+      if(k) doc.addPage();
+      // En-tête
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...NOIR);
+      doc.text("WILAYA DE LA RÉGION DE L'ORIENTAL - PRÉFECTURE D'OUJDA-ANGAD", 12, 11);
+      doc.setFont('helvetica', 'normal'); doc.text('Oujda, le ' + dStr, W - 12, 11, {align: 'right'});
+      doc.setDrawColor(...VERT); doc.setLineWidth(0.5); doc.line(12, 13.5, W - 12, 13.5);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...VERT);
+      doc.text(txt('Jour ' + n + (j.district ? '  -  District ' + j.district : '')), 12, 23);
+      const nh = j.stops.filter(q => j.district && q.district !== j.district).length;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...GRIS);
+      const resume = doc.splitTextToSize(txt(j.stops.length + ' terrains' + (nh ? ' (' + (j.stops.length - nh) + ' du district + ' + nh + ' du district suivant)' : '') + '  |  ' + kmf(j.d) + ' km  |  durée ' + hm(j.t)
+        + ' (route ' + hm(routeJour(j)) + ' + visites ' + hm(j.stops.length * vis) + ')  |  départ et retour : ' + G.dep.nom), W - 24).slice(0, 3);
+      doc.text(resume, 12, 29);
+      // Trajet complet dans Google Maps (découpage téléphone)
+      let x = 12, y = 29 + resume.length * 4.2 + 3;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...NOIR);
+      doc.text('Trajet complet dans Google Maps :', x, y); x += doc.getTextWidth('Trajet complet dans Google Maps :') + 3;
+      partiesGoogle(j, 3).forEach(pt => {
+        const t = pt.nb > 1 ? 'Partie ' + pt.k + ' (' + pt.de + ' > ' + pt.a + ')' : 'Ouvrir le trajet', w = doc.getTextWidth(t) + 6;
+        if(x + w > W - 12){ x = 12; y += 7.5; }
+        doc.setFillColor(...BLEU); doc.roundedRect(x, y - 4.4, w, 6.2, 1.4, 1.4, 'F');
+        doc.setTextColor(255); doc.text(t, x + 3, y); doc.link(x, y - 4.4, w, 6.2, {url: pt.u});
+        x += w + 2.5;
+      });
+      // Tableau des terrains
+      const body = [], urls = [], styles = [];
+      body.push(['D', 'Départ - ' + txt(G.dep.nom), '', '', '+0 min', '']); urls.push(null); styles.push('dep');
+      let cumT = 0, sep = false;
+      j.stops.forEach((q, i) => {
+        cumT += j.legs[i].t + (i ? vis : 0);
+        const hx = j.district && q.district !== j.district;
+        if(hx && !sep){ sep = true; body.push([{content: 'Puis début du district suivant : ' + txt(q.district), colSpan: 6}]); urls.push(null); styles.push('sep'); }
+        body.push([String(i + 1), txt(q.nom), txt(q.cat), txt(q.annexe), '+' + mnf(cumT), 'Y aller (GPS)\n' + q.lat.toFixed(5) + ', ' + q.lng.toFixed(5)]);
+        urls.push(yAller(q)); styles.push(hx ? 'hors' : '');
+      });
+      if(j.fin){ const lg = j.legs[j.legs.length - 1]; cumT += vis + lg.t;
+        body.push(['D', 'Retour - ' + txt(G.dep.nom), '', '', '+' + mnf(cumT), '']); urls.push(null); styles.push('dep'); }
+      doc.autoTable({startY: y + 6, theme: 'grid', margin: {left: 12, right: 12, top: 16, bottom: 15},
+        head: [['N°', 'Terrain', 'Catégorie', 'Annexe', 'Arrivée', 'Lien GPS']], body,
+        headStyles: {fillColor: VERT, textColor: 255, fontStyle: 'bold', halign: 'center', valign: 'middle', fontSize: 9},
+        styles: {fontSize: 9.5, cellPadding: 2.2, valign: 'middle', textColor: NOIR, lineColor: [200, 206, 214], lineWidth: 0.2},
+        columnStyles: {0: {halign: 'center', fontStyle: 'bold', cellWidth: 10}, 1: {cellWidth: 62, fontStyle: 'bold'}, 2: {cellWidth: 32, fontSize: 8.5}, 3: {halign: 'center', cellWidth: 17},
+          4: {halign: 'center', cellWidth: 19}, 5: {halign: 'center', textColor: BLEU, fontStyle: 'bold'}},
+        didParseCell: d => {
+          if(d.section !== 'body') return;
+          const st = styles[d.row.index];
+          if(st === 'dep'){ d.cell.styles.fillColor = [232, 237, 242]; d.cell.styles.fontStyle = 'bold'; }
+          if(st === 'sep'){ d.cell.styles.fillColor = OR; d.cell.styles.textColor = 255; d.cell.styles.fontStyle = 'bold'; d.cell.styles.fontSize = 9; }
+          if(st === 'hors' && d.column.index < 5) d.cell.styles.fillColor = JAUNE;
+          if(d.column.index === 1 && arabe && AR.test(String(d.cell.raw))){ d.cell.styles.font = 'Amiri'; d.cell.styles.fontStyle = 'normal'; d.cell.styles.fontSize = 11; }
+        },
+        didDrawCell: d => {
+          if(d.section !== 'body' || d.column.index !== 5) return;
+          const u = urls[d.row.index]; if(u) doc.link(d.cell.x, d.cell.y, d.cell.width, d.cell.height, {url: u});
+        }});
+    });
+    const np = doc.getNumberOfPages();
+    for(let i = 1; i <= np; i++){
+      doc.setPage(i); doc.setDrawColor(...VERT); doc.setLineWidth(0.3); doc.line(12, H - 11, W - 12, H - 11);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GRIS);
+      doc.text('« Y aller (GPS) » ouvre Google Maps en navigation vers le terrain, depuis votre position. Lignes jaunes : district suivant.', 12, H - 7);
+      doc.text('Page ' + i + ' / ' + np, W - 12, H - 7, {align: 'right'});
+    }
+    return doc;
+  }
+  function pdfListe(jours, btn){
+    if(!G || !jours.length) return;
+    const msg = t => { P('pmsg').textContent = t; if(btn) btn.textContent = t.length < 40 ? t : btn.textContent; };
+    const lib = btn ? btn.textContent : '';
+    if(btn) btn.disabled = true; msg('Préparation du PDF…');
+    Promise.all([chargerPDF(), chargerArabe()]).then(([, b64]) => {
+      const doc = construirePDFListe(window.jspdf.jsPDF, jours, b64);
+      const t = new Date(), ds = t.getFullYear() + String(t.getMonth() + 1).padStart(2, '0') + String(t.getDate()).padStart(2, '0');
+      doc.save('Liste_terrains_GPS_' + (jours.length === 1 ? 'Jour' + jours[0].n + '_' : '') + ds + '.pdf');
+      P('pmsg').textContent = 'PDF « liste des terrains + GPS » généré' + (b64 ? '.' : ' (noms en arabe non disponibles : police non chargée).');
+    }).catch(() => P('pmsg').textContent = 'Module PDF non chargé : vérifiez la connexion internet puis réessayez.')
+      .finally(() => { if(btn){ btn.disabled = false; btn.textContent = lib; } });
+  }
+  P('ppdfl').onclick = () => { if(G) pdfListe(G.variantes[gVar].itin.map((j, k) => ({j, n: k + 1})), P('ppdfl')); };
   P('ppdf').onclick = () => {
     if((!lignes && !G) || !lastPrm) return;
     P('ppdf').disabled = true; P('pmsg').textContent = 'Préparation du PDF…';
@@ -4125,6 +4253,112 @@ document.getElementById('edit-mode-toggle').addEventListener('click', () => {
   });
   z.querySelector('.leaflet-control-zoom-in').title = 'Zoomer';
   z.querySelector('.leaflet-control-zoom-out').title = 'Dézoomer';
+})();
+</script>
+<!-- ==================== MA POSITION EN DIRECT (suivi en voiture + district / annexe actuels) ==================== -->
+<style>
+.leaflet-control-zoom a.gps-btn{font-size:16px;line-height:30px}
+.leaflet-touch .leaflet-control-zoom a.gps-btn{line-height:36px}
+.leaflet-control-zoom a.gps-btn.on{background:#1a73e8;color:#fff}
+.leaflet-control-zoom a.gps-btn.libre{background:#E8F0FE;color:#1a73e8}
+.leaflet-control-zoom a.gps-btn.cherche{animation:gpsCl 1s infinite}
+@keyframes gpsCl{50%{opacity:.35}}
+.gps-me{position:relative;width:22px;height:22px}
+.gps-me .dot{position:absolute;inset:3px;border-radius:50%;background:#1a73e8;border:3px solid #fff;box-shadow:0 0 0 2px rgba(26,115,232,.35),0 2px 8px rgba(0,0,0,.45)}
+.gps-me .cap{position:absolute;left:50%;top:50%;width:0;height:0;margin:-27px 0 0 -9px;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid #1a73e8;transform-origin:9px 27px;display:none;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+.gps-me.mv .cap{display:block}
+.gps-me .pulse{position:absolute;inset:-10px;border-radius:50%;background:rgba(26,115,232,.25);animation:gpsP 2s ease-out infinite}
+@keyframes gpsP{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.4);opacity:0}}
+#gpsbar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:2500;display:none;align-items:center;gap:10px;max-width:min(560px,calc(100vw - 24px));padding:9px 10px 9px 14px;border-radius:14px;background:#1c2430;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.35);font-family:-apple-system,Segoe UI,Arial,Helvetica,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#gpsbar.show{display:flex}
+#gpsbar .gd{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid #fff}
+#gpsbar .gt{min-width:0;flex:1}
+#gpsbar .gt small{display:block;font-size:10.5px;opacity:.75;text-transform:uppercase;letter-spacing:.04em}
+#gpsbar .gt b{display:block;font-size:14.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gpsbar .gt span{display:block;font-size:11.5px;opacity:.85;margin-top:1px}
+#gpsbar .gv{flex:none;text-align:center;background:rgba(255,255,255,.12);border-radius:10px;padding:4px 8px;min-width:52px}
+#gpsbar .gv b{display:block;font-size:17px;line-height:1.1}
+#gpsbar .gv i{font-style:normal;font-size:10px;opacity:.75}
+#gpsbar .gx{flex:none;border:none;background:rgba(255,255,255,.18);color:#fff;width:30px;height:30px;border-radius:9px;font-size:14px;cursor:pointer}
+#gpsbar.flash{animation:gpsF .9s ease 2}
+@keyframes gpsF{50%{box-shadow:0 0 0 5px #FACC15,0 6px 20px rgba(0,0,0,.35)}}
+@media (max-width: 900px) and (min-height: 501px){ #gpsbar{top:64px} body.gps-on .leaflet-top.leaflet-left{top:136px} }
+</style>
+<div id="gpsbar" role="status" aria-live="polite" title="Toucher pour recentrer la carte sur votre position">
+  <i class="gd"></i><div class="gt"><small>Vous êtes dans</small><b id="gpsz">Recherche de votre position…</b><span id="gpsa"></span></div>
+  <div class="gv"><b id="gpsv">–</b><i>km/h</i></div>
+  <button type="button" class="gx" title="Arrêter le suivi de position">✕</button>
+</div>
+<script>
+(function(){
+  const z = document.querySelector('.leaflet-control-zoom'); if (!z) return;
+  const btn = document.createElement('a');
+  btn.href = '#'; btn.className = 'gps-btn'; btn.innerHTML = '📍'; btn.setAttribute('role', 'button');
+  btn.title = 'Ma position en direct (suivi en voiture + district actuel)'; btn.setAttribute('aria-label', btn.title);
+  z.appendChild(btn);
+  L.DomEvent.disableClickPropagation(btn);
+  const bar = document.getElementById('gpsbar'), $ = id => document.getElementById(id);
+  let watch = null, marker = null, cercle = null, suivre = true, derZone = null, verrou = null, dernier = null, premier = true;
+  const icone = L.divIcon({className: '', html: '<div class="gps-me"><div class="pulse"></div><div class="cap"></div><div class="dot"></div></div>', iconSize: [22, 22], iconAnchor: [11, 11]});
+  const etat = () => { btn.classList.toggle('on', !!watch && suivre); btn.classList.toggle('libre', !!watch && !suivre);
+    btn.title = !watch ? 'Ma position en direct (suivi en voiture + district actuel)' : suivre ? 'Arrêter le suivi de position' : 'Recentrer la carte sur ma position'; };
+  const ecranAllume = async on => {
+    try { if (on && 'wakeLock' in navigator && !verrou){ verrou = await navigator.wakeLock.request('screen'); verrou.addEventListener('release', () => verrou = null); }
+      if (!on && verrou){ await verrou.release(); verrou = null; } } catch(e){}
+  };
+  document.addEventListener('visibilitychange', () => { if (watch && document.visibilityState === 'visible') ecranAllume(true); });
+  function maj(p){
+    const c = p.coords, ll = [c.latitude, c.longitude];
+    btn.classList.remove('cherche');
+    if (!marker){
+      marker = L.marker(ll, {icon: icone, zIndexOffset: 5000, interactive: false, keyboard: false}).addTo(map);
+      cercle = L.circle(ll, {radius: c.accuracy, color: '#1a73e8', weight: 1, opacity: .4, fillOpacity: .08, interactive: false}).addTo(map);
+    } else { marker.setLatLng(ll); cercle.setLatLng(ll).setRadius(c.accuracy); }
+    // Vitesse : celle du GPS, sinon calculée depuis la mesure précédente
+    let v = c.speed;
+    if ((v == null || isNaN(v)) && dernier){ const dt = (p.timestamp - dernier.t) / 1000; if (dt > 0.5) v = map.distance(dernier.ll, ll) / dt; }
+    dernier = {ll, t: p.timestamp};
+    let cap = c.heading;
+    const el = marker.getElement() && marker.getElement().querySelector('.gps-me');
+    if (el){ const bouge = v != null && v > 1.5 && cap != null && !isNaN(cap); el.classList.toggle('mv', bouge); if (bouge) el.querySelector('.cap').style.transform = 'rotate(' + cap + 'deg)'; }
+    $('gpsv').textContent = v != null && !isNaN(v) ? Math.round(v * 3.6) : '–';
+    // District et annexe actuels
+    const g = findGeoForPoint(ll[0], ll[1]), d = DATA.districts.find(x => x.name === g.district);
+    const zone = g.district ? g.district + '|' + g.annexe : '';
+    $('gpsz').textContent = g.district ? 'District ' + g.district : 'Hors des districts d\'Oujda';
+    $('gpsa').textContent = (g.annexe ? 'Annexe ' + g.annexe + ' · ' : '') + 'précision ± ' + Math.round(c.accuracy) + ' m';
+    bar.querySelector('.gd').style.background = d ? d.color : '#9CA3AF';
+    if (derZone !== null && zone !== derZone){ bar.classList.remove('flash'); void bar.offsetWidth; bar.classList.add('flash'); if (navigator.vibrate) navigator.vibrate(150); }
+    derZone = zone;
+    if (suivre){ if (premier) map.setView(ll, Math.max(map.getZoom(), 16)); else map.setView(ll, map.getZoom(), {animate: false}); }
+    premier = false;
+  }
+  function erreur(e){
+    btn.classList.remove('cherche');
+    $('gpsz').textContent = e.code === 1 ? 'Localisation refusée' : 'Position introuvable';
+    $('gpsa').textContent = e.code === 1 ? 'Autorisez la localisation pour ce site dans le navigateur' : (location.protocol === 'file:' ? 'Ouvrez la carte depuis son adresse internet (https)' : 'Vérifiez que le GPS du téléphone est activé');
+    bar.querySelector('.gd').style.background = '#E11D48';
+  }
+  function demarrer(){
+    if (!navigator.geolocation){ bar.classList.add('show'); erreur({code: 2}); return; }
+    suivre = true; premier = true; derZone = null; dernier = null;
+    btn.classList.add('cherche'); bar.classList.add('show'); document.body.classList.add('gps-on');
+    $('gpsz').textContent = 'Recherche de votre position…'; $('gpsa').textContent = ''; $('gpsv').textContent = '–';
+    watch = navigator.geolocation.watchPosition(maj, erreur, {enableHighAccuracy: true, maximumAge: 1000, timeout: 30000});
+    ecranAllume(true); etat();
+  }
+  function arreter(){
+    if (watch != null) navigator.geolocation.clearWatch(watch);
+    watch = null; bar.classList.remove('show', 'flash'); btn.classList.remove('cherche'); document.body.classList.remove('gps-on');
+    if (marker){ map.removeLayer(marker); map.removeLayer(cercle); marker = cercle = null; }
+    ecranAllume(false); etat();
+  }
+  const recentrer = () => { suivre = true; if (marker) map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16)); etat(); };
+  L.DomEvent.on(btn, 'click', ev => { L.DomEvent.preventDefault(ev); if (watch == null) demarrer(); else if (!suivre) recentrer(); else arreter(); });
+  // L'utilisateur déplace la carte : on arrête de la recentrer automatiquement
+  map.on('dragstart', () => { if (watch != null && suivre){ suivre = false; etat(); } });
+  bar.addEventListener('click', ev => { if (ev.target.closest('.gx')) arreter(); else if (watch != null) recentrer(); });
+  window.gpsDirect = {demarrer, arreter};
 })();
 </script>
 </body>
